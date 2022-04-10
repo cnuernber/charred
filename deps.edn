@@ -1,0 +1,6 @@
+{:paths ["src" "target/classes"]
+ :deps {org.clojure/tools.logging {:mvn/version "1.2.4"}}
+ :aliases
+ {;; Run with clj -T:build function-in-build
+  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+          :ns-default build}}}
