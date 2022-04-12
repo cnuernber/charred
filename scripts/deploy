@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+scripts/run-tests
+clj -T:build jar
+cp target/classes/META-INF/maven/com.cnuernber/charred/pom.xml .
+clj -X:deploy

@@ -5,11 +5,11 @@ Efficient character-based file parsing for csv and json formats.
 
 * Zero dependencies.
 * As fast as univocity or jackson.
-* Same API as clojure.data.csv and clojure.data.json simply implemented far more
+* Same API as clojure.data.csv and clojure.data.json implemented far more
   efficiently.
 
 
-* [API Documentation]()
+* [API Documentation](https://cnuernber.github.io/charred/)
 
 
 ## Usage
@@ -29,4 +29,16 @@ user> (println (charred/write-json-str *1))
 ```
 
 
-See
+## Development
+
+Before running a REPL you must compile the java files into target/classes.  This directory
+will then be on your classpath.
+
+```console
+scripts/compile
+```
+
+Tests can be run with `scripts/run-tests` which will compile the java and then run the tests.
+
+
+

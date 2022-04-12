@@ -40,4 +40,15 @@
                :source-uri "https://github.com/cnuernber/chardata/blob/master/{filepath}#L{line}"
                :namespaces [charred.api
                             charred.coerce
-                            charred.parallel]}}}}
+                            charred.parallel]}}
+  :deploy
+  {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+   :exec-fn deps-deploy.deps-deploy/deploy
+   :exec-args {:installer :remote
+               :sign-releases? true
+               :artifact "target/charred.jar"}}
+  :install
+  {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+   :exec-fn deps-deploy.deps-deploy/deploy
+   :exec-args {:installer :local
+               :artifact "target/charred.jar"}}}}

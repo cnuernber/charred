@@ -3,11 +3,13 @@
             [clojure.edn :as edn])
   (:refer-clojure :exclude [compile]))
 
-(def lib 'com.cnuernber/charred)
-(def version (format "1.000-beta-1"))
+(def deps-data (edn/read-string (slurp "deps.edn")))
+(def codox-data (get-in deps-data [:aliases :codox :exec-args]))
+(def lib (symbol (codox-data :group-id) (codox-data :artifact-id)))
+(def version (codox-data :version))
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
-(def jar-file (format "target/%s-%s.jar" (name lib) version))
+(def jar-file (format "target/%s.jar" (name lib)))
 
 (defn clean [_]
   (b/delete {:path "target"}))
