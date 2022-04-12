@@ -22,22 +22,21 @@
                :artifact-id "charred"
                ;;Change this also in build.clj
                :version "1.000"
-               :name "charred"
+               :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}
-  ;;              :google-analytics "G-LN7PG6FJ2D"
-  ;;              :html {:transforms [[:head] [:append [:script {:async true
-  ;;                                                             :src "https://www.googletagmanager.com/gtag/js?id=G-LN7PG6FJ2D"}]]
-  ;;                                  [:head] [:append [:script "window.dataLayer = window.dataLayer || [];
-  ;; function gtag(){dataLayer.push(arguments);}
-  ;; gtag('js', new Date());
+               :html {:transforms [[:head] [:append [:script {:async true
+                                                              :src "https://www.googletagmanager.com/gtag/js?id=G-XJYNJF48RM"}]]
+                                   [:head] [:append [:script "window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
 
-  ;; gtag('config', 'G-LN7PG6FJ2D');"]]]}
+  gtag('config', 'G-XJYNJF48RM');"]]]}
                :themes [:rdash]
                :source-paths ["src"]
                :output-path "docs"
                :doc-paths ["topics"]
-               :source-uri "https://github.com/cnuernber/chardata/blob/master/{filepath}#L{line}"
+               :source-uri "https://github.com/cnuernber/charred/blob/master/{filepath}#L{line}"
                :namespaces [charred.api
                             charred.coerce
                             charred.parallel]}}
