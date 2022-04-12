@@ -1,9 +1,26 @@
-(ns chardata.api
+(ns charred.api
+  "Efficient pathways to read/write csv-based formats and json.  Many of these functions
+  have fast pathways for constructing the parser,writer in order to help with the case where
+  you want to rapidly encode/decode a stream of small objects.  For general uses, the simply
+  named read-XXX, write-XXX functions are designed to be drop-in but far more efficient
+  replacements of their `clojure.data.csv` and `clojure.data.json` equivalents.
+
+
+  This is based on an underlying char[] based parsing system that makes it easy to build
+  new parsers and allows tight loops to iterate through loaded character arrays and are thus
+  easily optimized by HotSpot.
+
+  * [CharBuffer.java](https://github.com/cnuernber/charred/blob/master/java/chardata/CharBuffer.java) - More efficient, simpler and general than StringBuilder.
+  * [CharReader.java](https://github.com/cnuernber/charred/blob/master/java/chardata/CharReader.java) - PushbackReader-like abstraction only capable of pushing back
+    1 character.  Allows access to the underlying buffer and relative offset.
+
+  On top of these abstractions you have reader/writer abstractions for java and csv."
   (:require [clojure.tools.logging :as log]
             [clojure.java.io :as io]
-            [chardata.coerce :as coerce]
+            [charred.coerce :as coerce]
+            [charred.parallel :as parallel]
             [clojure.set :as set])
-  (:import [chardata CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
+  (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
             JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter]
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
            [java.lang AutoCloseable]
@@ -19,94 +36,6 @@
 (set! *unchecked-math* :warn-on-boxed)
 
 
-(defonce ^:private default-thread-pool*
-  (delay
-    (Executors/newCachedThreadPool
-     (reify ThreadFactory
-       (newThread [this runnable]
-         (let [t (Thread. runnable (str (ns-name *ns*)))]
-           (.setDaemon t true)
-           t))))))
-
-
-(defn default-executor-service
-  "Default executor service that is created via 'newCachedThreadPool with a custom thread
-  factory that creates daemon threads.  This is an executor service that is suitable for
-  blocking operations as it creates new threads as needed."
-  ^ExecutorService[]
-  @default-thread-pool*)
-
-
-(deftype ^:private QueueException [e])
-
-
-(deftype ^:private QueueFn [^{:unsynchronized-mutable true
-                              :tag ArrayBlockingQueue} queue
-                            close-fn*]
-  CloseableSupplier
-  (get [this]
-    (when queue
-      (let [value (.take queue)]
-        (cond
-          (identical? value ::end)
-          (do
-            (.close this)
-            nil)
-          (instance? QueueException value)
-          (do
-            (.close this)
-            (throw (.e ^QueueException value)))
-          :else
-          value))))
-  (close [this]
-    (set! queue nil)
-    @close-fn*))
-
-
-(defn queue-supplier
-  "Given a supplier or clojure fn, create a new thread that will read that
-  fn and place the results into a queue of a fixed size.  Returns new suplier.
-  Iteration stops when the src-fn returns nil.
-
-  Options:
-
-  * `:queue-depth` - Queue depth.  Defaults to 16.
-  * `:log-level` - When set a message is logged when the iteration is finished.
-  * `:executor-service` - Which executor service to use to run the thread.  Defaults to
-     a default one created via [[default-executor-service]].
-  * `:close-fn` - Function to call to close upstream iteration."
-  [src-fn & [options]]
-  (let [queue-depth (long (get options :queue-depth 16))
-        queue (ArrayBlockingQueue. queue-depth)
-        continue?* (volatile! true)
-        close-fn (get options :close-fn)
-        src-fn (coerce/->supplier src-fn)
-        run-fn (fn []
-                 (try
-                   (loop [thread-continue? @continue?*
-                          next-val (.get src-fn)]
-                     (if (and thread-continue? next-val)
-                       (do
-                         (.put queue next-val)
-                         (recur @continue?* (.get src-fn)))
-                       (.put queue ::end)))
-                   (catch Exception e
-                     (.put queue (QueueException. e)))))
-        ^ExecutorService service (or (get options :executor-service)
-                                     (default-executor-service))
-        close-fn* (delay
-                    (try
-                      (vreset! continue?* false)
-                      (.clear queue)
-                      (when close-fn
-                        (close-fn))
-                      (when-let [ll (get options :log-level)]
-                        (log/log ll "queue-fn thread shutdown"))
-                      (catch Exception e
-                        (log/warnf e "Error closing down queue-fn thread"))))]
-    (.submit service ^Callable run-fn)
-    (QueueFn. queue close-fn*)))
-
 (defn- ->reader
   ^Reader [item]
   (cond
@@ -116,7 +45,6 @@
     (StringReader. item)
     :else
     (io/reader item)))
-
 
 
 (deftype RotatingCharBufFn [^{:unsynchronized-mutable true
@@ -185,20 +113,25 @@
   buffers are allocated as needed and not reused - this is the safest option.
   * `:bufsize` - Size of each buffer - defaults to (* 64 1024).  Small improvements are
   sometimes seen with larger or smaller buffers.
-  * `:async?` - defaults to false.  When true data is read in an async thread.
+  * `:async?` - defaults to true if the number of processors is more than one..  When true
+     data is read in an async thread.
   * `:close-reader?` - When true, close input reader when finished.  Defaults to true."
   ^CloseableSupplier [rdr & [options]]
   (let [rdr (->reader rdr)
         async? (and (> (.availableProcessors (Runtime/getRuntime)) 1)
-                    (get options :async? false))
+                    (get options :async? true))
         options (if async?
                   ;;You need some number more buffers than queue depth else buffers will be
                   ;;overwritten during processing.  I calculate you need at least 2  - one
                   ;;in the source thread, and one that the system is parsing.
-                  (let [qd (long (get options :queue-depth 4))]
+                  (let [qd (long (get options :queue-depth 4))
+                        n-buffers (long (get options :n-buffers -1))
+                        n-buffers (if (> n-buffers 0)
+                                    (max (+ qd 2) n-buffers)
+                                    n-buffers)]
                     (assoc options :queue-depth qd
                            :async? true
-                           :n-buffers (get options :n-buffers -1)
+                           :n-buffers n-buffers
                            :bufsize (get options :bufsize (* 64 1024))))
                   (assoc options :async? false))
         n-buffers (long (get options :n-buffers -1))
@@ -208,11 +141,11 @@
                    (RotatingCharBufFn.  rdr 0 buffers (get options :close-reader? true)))
                  (AllocCharBufFn. rdr bufsize (get options :close-reader? true)))]
     (if async?
-      (queue-supplier src-fn options)
+      (parallel/queue-supplier src-fn options)
       src-fn)))
 
 
-(defonce char-ary-cls (type (char-array 0)))
+(defonce ^:private char-ary-cls (type (char-array 0)))
 
 
 (defn reader->char-reader
@@ -223,7 +156,7 @@
   Options:
 
   Options are passed through mainly unchanged to queue-iter and to
-  [[reader->char-buf-iter]].
+  [[reader->char-buf-supplier]].
 
   * `:async?` - default to true - reads the reader in an offline thread into character
      buffers."
@@ -234,10 +167,7 @@
      (instance? char-ary-cls rdr)
      (CharReader. ^chars rdr)
      :else
-     (let [async? (and (> (.availableProcessors (Runtime/getRuntime)) 1)
-                       (get options :async? true))
-           options (if async? (assoc options :async? true) options)]
-       (CharReader. ^Supplier (reader->char-buf-supplier rdr options)))))
+     (CharReader. ^Supplier (reader->char-buf-supplier rdr options))))
   (^CharReader [rdr]
    (cond
      (string? rdr)
@@ -580,6 +510,9 @@
 
 
 (defprotocol PToJSON
+  "Protocol to extend support for converting items to a json-supported datastructure.
+  These can be a number, a string, an implementation of java.util.List or an implementation
+  of java.util.Map."
   (->json-data [item]
     "Automatic conversion of some subset of types to something acceptible to json.
 Defaults to toString for types that aren't representable in json."))
@@ -588,19 +521,21 @@ Defaults to toString for types that aren't representable in json."))
 (extend-protocol PToJSON
   Object
   (->json-data [item]
-    ;;Default to convert sql date to instant.
-    (if (instance? java.sql.Date item)
-      (-> (.getTime ^java.sql.Date item)
-          (Instant/ofEpochMilli)
-          (.toString))
-      (.toString ^Object item)))
+    (if (or (instance? Map item)
+            (instance? List item)
+            (.isArray (.getClass ^Object item)))
+      item
+      ;;Default to convert sql date to instant.
+      (if (instance? java.sql.Date item)
+        (-> (.getTime ^java.sql.Date item)
+            (Instant/ofEpochMilli)
+            (.toString))
+        (.toString ^Object item))))
+  Boolean
+  (->json-data [item] item)
   Number
   (->json-data [item] item)
   String
-  (->json-data [item] item)
-  List
-  (->json-data [item] item)
-  Map
   (->json-data [item] item)
   Keyword
   (->json-data [item] (name item))
@@ -608,80 +543,23 @@ Defaults to toString for types that aren't representable in json."))
   (->json-data [item] (name item)))
 
 
-(defmacro define-array-iter
-  [name ary-type]
-  `(do
-     (deftype ~name [~(with-meta (symbol "ary") {:tag ary-type})
-                     ~(with-meta (symbol "idx") {:unsynchronized-mutable true
-                                                 :tag 'long})
-                     ~(with-meta (symbol "alen") {:tag 'long})]
-       Iterator
-       (hasNext [this] (< ~'idx ~'alen))
-       (next [this] (let [retval# (aget ~'ary ~'idx)]
-                      (set! ~'idx (unchecked-inc ~'idx))
-                      retval#)))
-     (def ~(with-meta (symbol (str name "-ary-type"))
-             {:private true
-              :tag 'Class}) ~(Class/forName ary-type))))
-
-
-(define-array-iter ByteArrayIter "[B")
-(define-array-iter ShortArrayIter "[S")
-(define-array-iter CharArrayIter "[C")
-(define-array-iter IntArrayIter "[I")
-(define-array-iter LongArrayIter "[J")
-(define-array-iter FloatArrayIter "[F")
-(define-array-iter DoubleArrayIter "[D")
-(define-array-iter ObjectArrayIter "[Ljava.lang.Object;")
-
-
-(defn- ary-iter
-  ^Iterator [ary-data]
-  (cond
-    (instance? ByteArrayIter-ary-type ary-data)
-    (ByteArrayIter. ary-data 0 (alength ^bytes ary-data))
-    (instance? ShortArrayIter-ary-type ary-data)
-    (ShortArrayIter. ary-data 0 (alength ^shorts ary-data))
-    (instance? CharArrayIter-ary-type ary-data)
-    (CharArrayIter. ary-data 0 (alength ^chars ary-data))
-    (instance? IntArrayIter-ary-type ary-data)
-    (IntArrayIter. ary-data 0 (alength ^ints ary-data))
-    (instance? LongArrayIter-ary-type ary-data)
-    (LongArrayIter. ary-data 0 (alength ^longs ary-data))
-    (instance? FloatArrayIter-ary-type ary-data)
-    (FloatArrayIter. ary-data 0 (alength ^floats ary-data))
-    (instance? DoubleArrayIter-ary-type ary-data)
-    (DoubleArrayIter. ary-data 0 (alength ^doubles ary-data))
-    :else
-    (ObjectArrayIter. ary-data 0 (alength ^objects ary-data))))
-
-
-(defn- map-iter
-  ^Iterator [map-fn obj]
-  (let [iter (coerce/->iterator obj)]
-    (reify Iterator
-      (hasNext [this] (.hasNext iter))
-      (next [this]
-        (map-fn (.next iter))))))
-
-
-
-(def ^{:tag java.util.function.BiConsumer} default-obj-fn
+(def ^{:tag java.util.function.BiConsumer
+       :private true} default-obj-fn
   (reify BiConsumer
     (accept [this w value]
       (let [^JSONWriter w w]
-        (cond
-          (instance? List value)
-          (.writeArray w (coerce/->iterator value))
-          (instance? Map value)
-          (.writeMap w (map-iter (fn [^Map$Entry e]
-                                   (MapEntry. (->json-data (.getKey e))
-                                              (.getValue e)))
-                                 (.entrySet ^Map value)))
-          (.isArray (.getClass ^Object value))
-          (.writeArray w (ary-iter value))
-          :else
-          (.writeObject w (->json-data value)))))))
+        (let [value (when-not (nil? value) (->json-data value))]
+          (cond
+            (or (instance? List value)
+                (.isArray (.getClass ^Object value)))
+            (.writeArray w (coerce/->iterator value))
+            (instance? Map value)
+            (.writeMap w (coerce/map-iter (fn [^Map$Entry e]
+                                            (MapEntry. (->json-data (.getKey e))
+                                                       (.getValue e)))
+                                          (.entrySet ^Map value)))
+            :else
+            (.writeObject w value)))))))
 
 
 (defn json-writer-fn
@@ -699,9 +577,12 @@ Defaults to toString for types that aren't representable in json."))
 
 
 (defn write-json
-  "Write json to output.
+  "Write json to output.  You can extend the writer to new datatypes by implementing
+  the [[->json-data]] function of the protocol `PToJSON`.  This function need only return
+  json-acceptible datastructures which are numbers, booleans, nil, lists, arrays, and
+  maps.  The default type coercion will in general simply call .toString on the object.
 
-   Options:
+  Options:
 
   * `:escape-unicode` - If true (default) non-ASCII characters are escaped as \\uXXXX
   * `:escape-js-separators` If true (default) the Unicode characters U+2028 and U+2029 will
@@ -715,8 +596,10 @@ Defaults to toString for types that aren't representable in json."))
      the object.  The default iterates maps, lists, and arrays converting anything that is
      not a json primitive or a map, list or array to a json primitive via str.  java.sql.Date
      classes get special treatment and are converted to instants which then converted to
-     json primitive objects via the PToJSon protocol fn ->json which probaby defaults to
-     `toString`."
+     json primitive objects via the PToJSon protocol fn [[->json-data]] which defaults to
+     `toString`.  This is the most general override mechanism where you will need to manually
+     call the JSONWriter's methods.  The simpler but slightly less general pathway is to
+     override the protocol method [[->json-data]]."
   [output data & args]
   (let [argmap (apply hash-map args)
         writer-fn (json-writer-fn argmap)]

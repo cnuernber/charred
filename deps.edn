@@ -2,5 +2,42 @@
  :deps {org.clojure/tools.logging {:mvn/version "1.2.4"}}
  :aliases
  {;; Run with clj -T:build function-in-build
-  :build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
-          :ns-default build}}}
+  :build
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+   :ns-default build}
+  :test
+  {:extra-deps {com.cognitect/test-runner
+                {:git/url "https://github.com/cognitect-labs/test-runner"
+                 :sha "209b64504cb3bd3b99ecfec7937b358a879f55c1"}
+                ch.qos.logback/logback-classic {:mvn/version "1.1.3"}}
+   :extra-paths ["test"]
+   :main-opts ["-m" "cognitect.test-runner"]}
+  :codox
+  {:extra-deps {codox-theme-rdash/codox-theme-rdash {:mvn/version "0.1.2"}
+                nrepl/nrepl {:mvn/version "0.8.3"}
+                cider/cider-nrepl {:mvn/version "0.25.5"}
+                com.cnuernber/codox {:mvn/version "1.001"}}
+   :exec-fn codox.main/-main
+   :exec-args {:group-id "com.cnuernber"
+               :artifact-id "charred"
+               ;;Change this also in build.clj
+               :version "1.000-beta-1"
+               :name "charred"
+               :description "Fast (as anything on the JVM) simple csv and json reading/writing"
+               :metadata {:doc/format :markdown}
+  ;;              :google-analytics "G-LN7PG6FJ2D"
+  ;;              :html {:transforms [[:head] [:append [:script {:async true
+  ;;                                                             :src "https://www.googletagmanager.com/gtag/js?id=G-LN7PG6FJ2D"}]]
+  ;;                                  [:head] [:append [:script "window.dataLayer = window.dataLayer || [];
+  ;; function gtag(){dataLayer.push(arguments);}
+  ;; gtag('js', new Date());
+
+  ;; gtag('config', 'G-LN7PG6FJ2D');"]]]}
+               :themes [:rdash]
+               :source-paths ["src"]
+               :output-path "docs"
+               :doc-paths ["topics"]
+               :source-uri "https://github.com/cnuernber/chardata/blob/master/{filepath}#L{line}"
+               :namespaces [charred.api
+                            charred.coerce
+                            charred.parallel]}}}}

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+scripts/compile
+clj -M:test

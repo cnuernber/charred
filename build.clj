@@ -1,9 +1,10 @@
 (ns build
-  (:require [clojure.tools.build.api :as b])
+  (:require [clojure.tools.build.api :as b]
+            [clojure.edn :as edn])
   (:refer-clojure :exclude [compile]))
 
-(def lib 'com.cnuernber/chardata)
-(def version (format "1.000-SNAPSHOT"))
+(def lib 'com.cnuernber/charred)
+(def version (format "1.000-beta-1"))
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
 (def jar-file (format "target/%s-%s.jar" (name lib) version))

@@ -1,4 +1,4 @@
-package chardata;
+package charred;
 
 
 import java.io.EOFException;
@@ -93,7 +93,7 @@ public final class JSONReader implements AutoCloseable {
   public static final Supplier<Object> defaultEOFFn = () -> { throw new RuntimeException("EOF encounted while reading stream."); };
   public static final <T> T orDefault(T val, T defVal) { return val != null ? val : defVal; }
 
-  public static final Keyword elidedValue = Keyword.intern("tech.v3.datatype.char-input", "elided");
+  public static final Keyword elidedValue = Keyword.intern("charred.api", "elided");
 
   public JSONReader(Function<String,Object> _doubleFn,
 		    ArrayReader _aryReader,

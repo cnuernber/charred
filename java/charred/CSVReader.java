@@ -1,4 +1,4 @@
-package chardata;
+package charred;
 
 
 import java.io.EOFException;

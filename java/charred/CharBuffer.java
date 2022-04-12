@@ -1,4 +1,4 @@
-package chardata;
+package charred;
 
 
 public final class CharBuffer implements CharSequence
