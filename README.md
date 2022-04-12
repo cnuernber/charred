@@ -41,4 +41,6 @@ scripts/compile
 Tests can be run with `scripts/run-tests` which will compile the java and then run the tests.
 
 
+## License
 
+MIT license.
