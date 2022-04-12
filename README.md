@@ -31,6 +31,15 @@ user> (println (charred/write-json-str *1))
 }
 ```
 
+#### A Note About Efficiency
+
+
+If you are reading or writing a lot of small JSON objects the best option is to create a
+[specialized parse fn](https://cnuernber.github.io/charred/charred.api.html#var-parse-json-fn)
+to exactly the options that you need and pass in strings or char[] data.  A [similar pathway](https://cnuernber.github.io/charred/charred.api.html#var-write-json-fn) exists for high
+performance writing of json objects.  The returned functions are safe to use in multithreaded
+contexts.
+
 
 ## Development
 
