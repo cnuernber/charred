@@ -40,10 +40,17 @@ to exactly the options that you need and pass in strings or char[] data.  A [sim
 performance writing of json objects.  The returned functions are safe to use in multithreaded
 contexts.
 
-
 The system is overall tuned for large files.  Small files or input streams should be setup with `:async?` false
 and smaller `:bufsize` arguments such as 8192 as there is no gain for async loading when the file/stream is smaller than 1MB.
-For smaller streams slurping into strings in an offline threadpool will lead to the highest performance.
+For smaller streams slurping into strings in an offline threadpool will lead to the highest performance.  For a particular
+file size if you know you are going to parse many of these then you should gridsearch `:bufsize` and `:async?` as 
+that is a tuning pathway that I haven't put a ton of time into.  In general the system is tuned towards larger
+files as that is when performance really does matter.
+
+All the parsing systems have mutable options.  These can be somewhat faster and it is interesting to
+look at the tradeoffs involved.  Parsing a csv using the raw supplier interface is a bit faster
+than using the Clojure sequence pathway into persistent vectors and it probably doesn't really
+change your consume pathway so it may be worth trying it.
 
 
 ## Development
