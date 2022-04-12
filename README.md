@@ -41,6 +41,11 @@ performance writing of json objects.  The returned functions are safe to use in 
 contexts.
 
 
+The system is overall tuned for large files.  Small files or input streams should be setup with `:async?` false
+and smaller `:bufsize` arguments such as 8192 as there is no gain for async loading when the file/stream is smaller than 1MB.
+For smaller streams slurping into strings in an offline threadpool will lead to the highest performance.
+
+
 ## Development
 
 Before running a REPL you must compile the java files into target/classes.  This directory
