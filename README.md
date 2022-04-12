@@ -3,6 +3,9 @@
 Efficient character-based file parsing for csv and json formats.
 
 
+[![Clojars Project](https://clojars.org/com.cnuernber/charred/latest-version.svg)](https://clojars.org/com.cnuernber/charred)
+
+
 * Zero dependencies.
 * As fast as univocity or jackson.
 * Same API as clojure.data.csv and clojure.data.json implemented far more
