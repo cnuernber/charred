@@ -21,7 +21,7 @@
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
                ;;Change this also in build.clj
-               :version "1.000-beta-1"
+               :version "1.000"
                :name "charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}
