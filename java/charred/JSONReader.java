@@ -158,6 +158,7 @@ public final class JSONReader implements AutoCloseable {
 	    break;
 	  default: throw new Exception("Unrecognized escape character: " + data);
 	  }
+	  buffer = reader.buffer();
 	  startpos = reader.position();
 	  //pos will be incremented in loop update
 	  pos = startpos - 1;
@@ -318,13 +319,15 @@ public final class JSONReader implements AutoCloseable {
       if (nextChar == '}') {
 	if (hasNext && !first)
 	  throw new Exception("One too many commas in your map my friend: "
-			      + String.valueOf(objReader.finalizeObj(mapObj)));
+			      + String.valueOf(objReader.finalizeObj(mapObj))
+			      + "context:\n" + context());
 	return objReader.finalizeObj(mapObj);
       } else {
 	first = false;
 	if (!hasNext)
 	  throw new Exception ("One too few commas in your map my friend: "
-			       + String.valueOf(objReader.finalizeObj(mapObj)));
+			       + String.valueOf(objReader.finalizeObj(mapObj)) +
+			       "context:\n" + context());
 	String keyVal = null;
 	if (nextChar == '"')
 	  keyVal = readString();
@@ -345,6 +348,15 @@ public final class JSONReader implements AutoCloseable {
       }
     }
     throw new EOFException("EOF while reading map.");
+  }
+
+  public final String context() throws Exception {
+    final char[] buf = reader.buffer();
+    final int pos = reader.position();
+    final int len = buf.length;
+    int startpos = Math.max(0, pos - 200);
+    int endpos = Math.min(len-1, pos + 200);
+    return new String(buf, startpos, endpos - startpos);
   }
 
   public final Object readObject() throws Exception {
@@ -372,7 +384,7 @@ public final class JSONReader implements AutoCloseable {
 	final char[] data = tempRead(3);
 	if (data[0] == 'u' && data[1] == 'l' && data[2] == 'l')
 	  return null;
-	throw new Exception("JSON parse error - unrecognized 'null' entry.");
+	throw new Exception("JSON parse error - unrecognized 'null' entry - " + new String(data) + " - context:\n" + context());
       }
       case '[': return readList();
       case '{': return readMap();

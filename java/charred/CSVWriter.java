@@ -14,10 +14,11 @@ public class CSVWriter {
 	for (int idx = 0; idx < slen; ++idx) {
 	  final char curChar = v.charAt(idx);
 	  if (curChar <= maxChar && curChar >= minChar) {
-	    return curChar == '\r' ||
-	      curChar == '\n' ||
-	      curChar == sep ||
-	      curChar == quote;
+	    if ( curChar == '\r' ||
+		 curChar == '\n' ||
+		 curChar == sep ||
+		 curChar == quote )
+	      return true;
 	  }
 	}
 	return false;

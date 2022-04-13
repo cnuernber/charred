@@ -107,8 +107,7 @@ public final class CharReader implements AutoCloseable
 	curPos = pos + readlen;
 	return len;
       }
-      nextBuffer();
-      srcBuf = buffer;
+      srcBuf = nextBuffer();
     }
     return -1;
   }
