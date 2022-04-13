@@ -15,10 +15,9 @@
     1 character.  Allows access to the underlying buffer and relative offset.
 
   On top of these abstractions you have reader/writer abstractions for java and csv."
-  (:require [clojure.tools.logging :as log]
-            [clojure.java.io :as io]
-            [charred.coerce :as coerce]
+  (:require [charred.coerce :as coerce]
             [charred.parallel :as parallel]
+            [clojure.java.io :as io]
             [clojure.set :as set])
   (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
             JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter]
@@ -108,9 +107,12 @@
 
   Options:
 
-  * `:n-buffers` - Number of buffers to use.  Defaults to -1 - if this number is positive
-  but too small then buffers in flight will get overwritten.  If n-buffers is <= 0 then
-  buffers are allocated as needed and not reused - this is the safest option.
+  * `:n-buffers` - Number of buffers to use.  Defaults to 6 as the queue size defaults to 4 -
+  if this number is positive but too small then buffers in flight will get overwritten.  If
+  n-buffers is <= 0 then buffers are allocated as needed and not reused - this is the safest
+  option but also can make async loading much slower than it would be otherwise.  This must
+  be at least 2 larger than queue-depth.
+  * `:queue-depth` - Defaults to 4.  See comments on `:n-buffers`.
   * `:bufsize` - Size of each buffer - defaults to (* 64 1024).  Small improvements are
   sometimes seen with larger or smaller buffers.
   * `:async?` - defaults to true if the number of processors is more than one..  When true
@@ -125,7 +127,7 @@
                   ;;overwritten during processing.  I calculate you need at least 2  - one
                   ;;in the source thread, and one that the system is parsing.
                   (let [qd (long (get options :queue-depth 4))
-                        n-buffers (long (get options :n-buffers -1))
+                        n-buffers (long (get options :n-buffers 6))
                         n-buffers (if (> n-buffers 0)
                                     (max (+ qd 2) n-buffers)
                                     n-buffers)]
@@ -452,7 +454,10 @@
   if the read pathway is finished.  Input may be a character array or string (most efficient)
   or something convertible to a reader.  Options for conversion to reader are described in
   [[reader->char-reader]] although for the json case we default `:async?` to false as
-  most json is just too small to benefit from async reading of the input.
+  most json is just too small to benefit from async reading of the input.  For input streams
+  - unlike csv - `:async?` defaults to `false` as most JSON files are relatively small -
+  in the 10-100K range where async loading doesn't make much of a difference.  On a larger
+  file, however, setting `:async?` to true definitely can make a large difference.
 
   Options:
 
@@ -478,7 +483,7 @@
   ^CloseableSupplier [input & [options]]
   (let [^JSONReader json-rdr ((json-reader-fn options))
         close-fn* (delay (.close json-rdr))
-        ;;default async? to false
+        ;;default async? to false as most json files are small
         options (assoc options :async? (get options :async? false))]
     (.beginParse json-rdr (reader->char-reader input options))
     (JSONSupplier. json-rdr close-fn*)))

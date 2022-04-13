@@ -1,5 +1,4 @@
 {:paths ["src" "target/classes"]
- :deps {org.clojure/tools.logging {:mvn/version "1.2.4"}}
  :aliases
  {;; Run with clj -T:build function-in-build
   :build
@@ -21,7 +20,7 @@
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
                ;;Change this also in build.clj
-               :version "1.001"
+               :version "1.002"
                :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}

@@ -5,8 +5,7 @@ Efficient character-based file parsing for csv and json formats.
 
 [![Clojars Project](https://clojars.org/com.cnuernber/charred/latest-version.svg)](https://clojars.org/com.cnuernber/charred)
 
-
-* One dependency - clojure.tools.logging.
+* Zero dependencies.
 * As fast as univocity or jackson.
 * Same API as clojure.data.csv and clojure.data.json implemented far more
   efficiently.
@@ -43,7 +42,7 @@ contexts.
 The system is overall tuned for large files.  Small files or input streams should be setup with `:async?` false
 and smaller `:bufsize` arguments such as 8192 as there is no gain for async loading when the file/stream is smaller than 1MB.
 For smaller streams slurping into strings in an offline threadpool will lead to the highest performance.  For a particular
-file size if you know you are going to parse many of these then you should gridsearch `:bufsize` and `:async?` as 
+file size if you know you are going to parse many of these then you should gridsearch `:bufsize` and `:async?` as
 that is a tuning pathway that I haven't put a ton of time into.  In general the system is tuned towards larger
 files as that is when performance really does matter.
 

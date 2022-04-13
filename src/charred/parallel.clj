@@ -1,7 +1,6 @@
 (ns charred.parallel
   "Parallelism helpers"
-  (:require [charred.coerce :as coerce]
-            [clojure.tools.logging :as log])
+  (:require [charred.coerce :as coerce])
   (:import [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory
             ForkJoinPool Callable ForkJoinTask Future]
            [java.lang AutoCloseable]
@@ -64,7 +63,10 @@
   Options:
 
   * `:queue-depth` - Queue depth.  Defaults to 16.
-  * `:log-level` - When set a message is logged when the iteration is finished.
+  * `:log-fn` - When set a message is logged when the iteration is finished.  If no error
+     was encounted log-fn receives the message.  If an error is encountered it receives
+     the exception followed by the message.  log-fn *must* be able to take either 1 or
+     2 arguments.
   * `:executor-service` - Which executor service to use to run the thread.  Defaults to
      a default one created via [[default-executor-service]].
   * `:close-fn` - Function to call to close upstream iteration.  When not provided
@@ -78,6 +80,7 @@
                      (when (instance? AutoCloseable src-fn)
                        #(.close ^AutoCloseable src-fn)))
         src-fn (coerce/->supplier src-fn)
+        log-fn (get options :log-fn)
         run-fn (fn []
                  (try
                    (loop [thread-continue? @continue?*
@@ -97,10 +100,14 @@
                       (.clear queue)
                       (when close-fn
                         (close-fn))
-                      (when-let [ll (get options :log-level)]
-                        (log/log ll "queue-fn thread shutdown"))
+                      (when log-fn
+                        (log-fn "queue-fn thread shutdown"))
                       (catch Exception e
-                        (log/warnf e "Error closing down queue-fn thread"))))]
+                        (try
+                          (log-fn e "Error closing down queue-fn thread")
+                          (catch Exception ee
+                            (println "Error attempting to log error - log-fn *must* take 2 arguments in the event of an error.
+riginal exception: " e "\nLog fn exception:" ee))))))]
     (.submit service ^Callable run-fn)
     (QueueFn. queue close-fn*)))
 
