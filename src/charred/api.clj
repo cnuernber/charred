@@ -14,7 +14,11 @@
   * [CharReader.java](https://github.com/cnuernber/charred/blob/master/java/chardata/CharReader.java) - PushbackReader-like abstraction only capable of pushing back
     1 character.  Allows access to the underlying buffer and relative offset.
 
-  On top of these abstractions you have reader/writer abstractions for java and csv."
+  On top of these abstractions you have reader/writer abstractions for java and csv.
+
+  Many of these abstractions return a [CloseableSupplier](https://github.com/cnuernber/charred/blob/master/java/charred/CloseableSupplier.java) so you
+  can simply use them with `with-open` and the underlying stream/reader will be closed when the control leaves the block.  If you read all the data
+  out of the supplier then the supplier itself will close the input when finished."
   (:require [charred.coerce :as coerce]
             [charred.parallel :as parallel]
             [clojure.java.io :as io]
@@ -100,7 +104,7 @@
 
 
 (defn reader->char-buf-supplier
-  "Given a reader, return a supplierthat when called reads the next buffer of the reader.
+  "Given a reader, return a supplier that when called reads the next buffer of the reader.
   When n-buffers is >= 0, this function iterates through a fixed number of buffers under
   the covers so you need to be cognizant of the number of actual buffers that you want to
   have present in memory. This fn also implement `AutoCloseable` and closing it will close
@@ -158,11 +162,8 @@
 
   Options:
 
-  Options are passed through mainly unchanged to queue-iter and to
-  [[reader->char-buf-supplier]].
+  See options for [[reader->char-buf-supplier]]."
 
-  * `:async?` - default to true - reads the reader in an offline thread into character
-     buffers."
   (^CharReader [rdr options]
    (cond
      (string? rdr)
@@ -238,13 +239,14 @@
   this returns an java.util.function.Supplier which also implements AutoCloseable as well as
   `clojure.lang.Seqable` and `clojure.lang.IReduce`.
 
-  The supplier returned derives from AutoCloseable and it will terminate the iteration and
-  close the underlying iterator (and join the async thread) if (.close iter) is called.
-  Additionally it derives from `Seqable` and `IReduce`.
+  The supplier returned derives from AutoCloseable and it will terminate the reading and
+  close the underlying read mechanism (and join the async thread) if (.close supp) is called.
 
   For a drop-in but much faster replacement to clojure.data.csv use [[read-csv]].
 
   Options:
+
+  In additon to these options, see options for [[reader->char-buf-supplier]].
 
   * `:async?` - Defaults to true - read the file into buffers in an offline thread.  This
      speeds up reading larger files (1MB+) by about 30%.
@@ -479,6 +481,8 @@
 
   Options:
 
+  In addition to the options below, see options for [[reader->char-reader]].
+
   * `:bigdec` - When true use bigdecimals for floating point numbers.  Defaults to false.
   * `:double-fn` - If :bigdec isn't provided, use this function to parse double values.
   * `:profile` - Which performance profile to use.  This simply provides defaults to
@@ -516,7 +520,7 @@
 
 
 (defn parse-json-fn
-  "Return a function from input->json.  Reuses the parse context and thus when
+  "Return a function from input->json.  Parses the options once and thus when
   parsing many small JSON inputs where you intend to get one and only one JSON
   object from them this pathway is a bit more efficient than read-json.
 

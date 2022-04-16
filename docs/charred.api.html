@@ -18,30 +18,33 @@ easily optimized by HotSpot.</p>
 1 character.  Allows access to the underlying buffer and relative offset.</li>
 </ul>
 <p>On top of these abstractions you have reader/writer abstractions for java and csv.</p>
+<p>Many of these abstractions return a <a href="https://github.com/cnuernber/charred/blob/master/java/charred/CloseableSupplier.java">CloseableSupplier</a> so you
+can simply use them with <code>with-open</code> and the underlying stream/reader will be closed when the control leaves the block.  If you read all the data
+out of the supplier then the supplier itself will close the input when finished.</p>
 </div></div><div class="public anchor" id="var-json-reader-fn"><h3>json-reader-fn</h3><div class="usage"><code>(json-reader-fn options)</code></div><div class="doc"><div class="markdown"><p>Given options, return a function that when called constructs a json reader from
 exactly those options.  This avoids the work of upacking/analyzing the options
 when constructing many json readers for a sequence small inputs.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L407">view source</a></div></div><div class="public anchor" id="var-json-writer-fn"><h3>json-writer-fn</h3><div class="usage"><code>(json-writer-fn options)</code></div><div class="doc"><div class="markdown"><p>Return a function that when called efficiently constructs a JSONWriter from the given
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L409">view source</a></div></div><div class="public anchor" id="var-json-writer-fn"><h3>json-writer-fn</h3><div class="usage"><code>(json-writer-fn options)</code></div><div class="doc"><div class="markdown"><p>Return a function that when called efficiently constructs a JSONWriter from the given
 options.  Same arguments as <a href="charred.api.html#var-write-json">write-json</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L588">view source</a></div></div><div class="public anchor" id="var-parse-json-fn"><h3>parse-json-fn</h3><div class="usage"><code>(parse-json-fn &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Return a function from input-&gt;json.  Reuses the parse context and thus when
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L592">view source</a></div></div><div class="public anchor" id="var-parse-json-fn"><h3>parse-json-fn</h3><div class="usage"><code>(parse-json-fn &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Return a function from input-&gt;json.  Parses the options once and thus when
 parsing many small JSON inputs where you intend to get one and only one JSON
 object from them this pathway is a bit more efficient than read-json.</p>
 <p>Same options as <a href="charred.api.html#var-read-json-supplier">read-json-supplier</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L518">view source</a></div></div><div class="public anchor" id="var-PToJSON"><h3>PToJSON</h3><h4 class="type">protocol</h4><div class="usage"></div><div class="doc"><div class="markdown"><p>Protocol to extend support for converting items to a json-supported datastructure.
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L522">view source</a></div></div><div class="public anchor" id="var-PToJSON"><h3>PToJSON</h3><h4 class="type">protocol</h4><div class="usage"></div><div class="doc"><div class="markdown"><p>Protocol to extend support for converting items to a json-supported datastructure.
 These can be a number, a string, an implementation of java.util.List or an implementation
 of java.util.Map.</p>
 </div></div><div class="members"><h4>members</h4><div class="inner"><div class="public anchor" id="var--.3Ejson-data"><h3>-&gt;json-data</h3><div class="usage"><code>(-&gt;json-data item)</code></div><div class="doc"><div class="markdown"><p>Automatic conversion of some subset of types to something acceptible to json.
 Defaults to toString for types that aren't representable in json.</p>
-</div></div></div></div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L535">view source</a></div></div><div class="public anchor" id="var-read-csv"><h3>read-csv</h3><div class="usage"><code>(read-csv input &amp; options)</code></div><div class="doc"><div class="markdown"><p>Read a csv returning a clojure.data.csv-compatible sequence.  For options
+</div></div></div></div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L539">view source</a></div></div><div class="public anchor" id="var-read-csv"><h3>read-csv</h3><div class="usage"><code>(read-csv input &amp; options)</code></div><div class="doc"><div class="markdown"><p>Read a csv returning a clojure.data.csv-compatible sequence.  For options
 see <a href="charred.api.html#var-read-csv-supplier">read-csv-supplier</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L341">view source</a></div></div><div class="public anchor" id="var-read-csv-supplier"><h3>read-csv-supplier</h3><div class="usage"><code>(read-csv-supplier input &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Read a csv into a row supplier.  Parse algorithm the same as clojure.data.csv although
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L343">view source</a></div></div><div class="public anchor" id="var-read-csv-supplier"><h3>read-csv-supplier</h3><div class="usage"><code>(read-csv-supplier input &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Read a csv into a row supplier.  Parse algorithm the same as clojure.data.csv although
 this returns an java.util.function.Supplier which also implements AutoCloseable as well as
 <code>clojure.lang.Seqable</code> and <code>clojure.lang.IReduce</code>.</p>
-<p>The supplier returned derives from AutoCloseable and it will terminate the iteration and
-close the underlying iterator (and join the async thread) if (.close iter) is called.
-Additionally it derives from <code>Seqable</code> and <code>IReduce</code>.</p>
+<p>The supplier returned derives from AutoCloseable and it will terminate the reading and
+close the underlying read mechanism (and join the async thread) if (.close supp) is called.</p>
 <p>For a drop-in but much faster replacement to clojure.data.csv use <a href="charred.api.html#var-read-csv">read-csv</a>.</p>
 <p>Options:</p>
+<p>In additon to these options, see options for <a href="charred.api.html#var-reader-.3Echar-buf-supplier">reader-&gt;char-buf-supplier</a>.</p>
 <ul>
 <li><code>:async?</code> - Defaults to true - read the file into buffers in an offline thread.  This
 speeds up reading larger files (1MB+) by about 30%.</li>
@@ -59,9 +62,9 @@ values. Defaults to false.</li>
 <li><code>:profile</code> - Either <code>:immutable</code> or <code>:mutable</code>.  <code>:immutable</code> returns persistent vectors
 while <code>:mutable</code> returns arraylists.</li>
 </ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L236">view source</a></div></div><div class="public anchor" id="var-read-json"><h3>read-json</h3><div class="usage"><code>(read-json input &amp; args)</code></div><div class="doc"><div class="markdown"><p>Drop in replacement for clojure.data.json/read and clojure.data.json/read-str.  For options
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L237">view source</a></div></div><div class="public anchor" id="var-read-json"><h3>read-json</h3><div class="usage"><code>(read-json input &amp; args)</code></div><div class="doc"><div class="markdown"><p>Drop in replacement for clojure.data.json/read and clojure.data.json/read-str.  For options
 see <a href="charred.api.html#var-read-json-supplier">read-json-supplier</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L510">view source</a></div></div><div class="public anchor" id="var-read-json-supplier"><h3>read-json-supplier</h3><div class="usage"><code>(read-json-supplier input &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Read one or more JSON objects.
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L514">view source</a></div></div><div class="public anchor" id="var-read-json-supplier"><h3>read-json-supplier</h3><div class="usage"><code>(read-json-supplier input &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Read one or more JSON objects.
 Returns an auto-closeable supplier that when called by default throws an exception
 if the read pathway is finished.  Input may be a character array or string (most efficient)
 or something convertible to a reader.  Options for conversion to reader are described in
@@ -73,6 +76,7 @@ in the 10-100K range where async loading doesn't make much of a difference.  On 
 file, however, setting <code>:async?</code> to true definitely can make a large difference.</li>
 </ul>
 <p>Options:</p>
+<p>In addition to the options below, see options for <a href="charred.api.html#var-reader-.3Echar-reader">reader-&gt;char-reader</a>.</p>
 <ul>
 <li><code>:bigdec</code> - When true use bigdecimals for floating point numbers.  Defaults to false.</li>
 <li><code>:double-fn</code> - If :bigdec isn't provided, use this function to parse double values.</li>
@@ -94,7 +98,7 @@ object throw an EOF error.  Else returns a special EOF value.</li>
 <li><code>:eof-fn</code> - Function called if readObject is going to return EOF.  Defaults to throwing an
 EOFException.</li>
 </ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L469">view source</a></div></div><div class="public anchor" id="var-reader-.3Echar-buf-supplier"><h3>reader-&gt;char-buf-supplier</h3><div class="usage"><code>(reader-&gt;char-buf-supplier rdr &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Given a reader, return a supplierthat when called reads the next buffer of the reader.
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L471">view source</a></div></div><div class="public anchor" id="var-reader-.3Echar-buf-supplier"><h3>reader-&gt;char-buf-supplier</h3><div class="usage"><code>(reader-&gt;char-buf-supplier rdr &amp; [options])</code></div><div class="doc"><div class="markdown"><p>Given a reader, return a supplier that when called reads the next buffer of the reader.
 When n-buffers is &gt;= 0, this function iterates through a fixed number of buffers under
 the covers so you need to be cognizant of the number of actual buffers that you want to
 have present in memory. This fn also implement <code>AutoCloseable</code> and closing it will close
@@ -113,17 +117,12 @@ sometimes seen with larger or smaller buffers.</li>
 data is read in an async thread.</li>
 <li><code>:close-reader?</code> - When true, close input reader when finished.  Defaults to true.</li>
 </ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L102">view source</a></div></div><div class="public anchor" id="var-reader-.3Echar-reader"><h3>reader-&gt;char-reader</h3><div class="usage"><code>(reader-&gt;char-reader rdr options)</code><code>(reader-&gt;char-reader rdr)</code></div><div class="doc"><div class="markdown"><p>Given a reader, return a CharReader which presents some of the same interface
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L106">view source</a></div></div><div class="public anchor" id="var-reader-.3Echar-reader"><h3>reader-&gt;char-reader</h3><div class="usage"><code>(reader-&gt;char-reader rdr options)</code><code>(reader-&gt;char-reader rdr)</code></div><div class="doc"><div class="markdown"><p>Given a reader, return a CharReader which presents some of the same interface
 as a pushbackreader but is only capable of pushing back 1 character.  It is extremely
 quick to instantiate this object from a string or character array.</p>
 <p>Options:</p>
-<p>Options are passed through mainly unchanged to queue-iter and to
-<a href="charred.api.html#var-reader-.3Echar-buf-supplier">reader-&gt;char-buf-supplier</a>.</p>
-<ul>
-<li><code>:async?</code> - default to true - reads the reader in an offline thread into character
-buffers.</li>
-</ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L154">view source</a></div></div><div class="public anchor" id="var-write-csv"><h3>write-csv</h3><div class="usage"><code>(write-csv w data &amp; options)</code></div><div class="doc"><div class="markdown"><p>Writes data to writer in CSV-format.
+<p>See options for <a href="charred.api.html#var-reader-.3Echar-buf-supplier">reader-&gt;char-buf-supplier</a>.</p>
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L158">view source</a></div></div><div class="public anchor" id="var-write-csv"><h3>write-csv</h3><div class="usage"><code>(write-csv w data &amp; options)</code></div><div class="doc"><div class="markdown"><p>Writes data to writer in CSV-format.
 Options:</p>
 <ul>
 <li><code>:separator</code> - Default ,)</li>
@@ -134,7 +133,7 @@ case every field is quoted.
 :newline (:lf (default) or :cr+lf)
 :close-writer? - defaults to true.  When true, close writer when finished.</li>
 </ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L352">view source</a></div></div><div class="public anchor" id="var-write-json"><h3>write-json</h3><div class="usage"><code>(write-json output data &amp; args)</code></div><div class="doc"><div class="markdown"><p>Write json to output.  You can extend the writer to new datatypes by implementing
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L354">view source</a></div></div><div class="public anchor" id="var-write-json"><h3>write-json</h3><div class="usage"><code>(write-json output data &amp; args)</code></div><div class="doc"><div class="markdown"><p>Write json to output.  You can extend the writer to new datatypes by implementing
 the <a href="charred.api.html#var--.3Ejson-data">-&gt;json-data</a> function of the protocol <code>PToJSON</code>.  This function need only return
 json-acceptible datastructures which are numbers, booleans, nil, lists, arrays, and
 maps.  The default type coercion will in general simply call .toString on the object.</p>
@@ -157,9 +156,9 @@ json primitive objects via the PToJSon protocol fn <a href="charred.api.html#var
 call the JSONWriter's methods.  The simpler but slightly less general pathway is to
 override the protocol method <a href="charred.api.html#var--.3Ejson-data">-&gt;json-data</a>.</li>
 </ul>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L602">view source</a></div></div><div class="public anchor" id="var-write-json-fn"><h3>write-json-fn</h3><div class="usage"><code>(write-json-fn argmap)</code></div><div class="doc"><div class="markdown"><p>Return a function of two arguments,  (output,data), that efficiently constructs
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L606">view source</a></div></div><div class="public anchor" id="var-write-json-fn"><h3>write-json-fn</h3><div class="usage"><code>(write-json-fn argmap)</code></div><div class="doc"><div class="markdown"><p>Return a function of two arguments,  (output,data), that efficiently constructs
 a json writer and writes the data. This is the most efficient pathway when writing
 a bunch of small json objects as it avoids the cost associated with unpacking the
 argument map.  Same arguments as <a href="charred.api.html#var-write-json">write-json</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L641">view source</a></div></div><div class="public anchor" id="var-write-json-str"><h3>write-json-str</h3><div class="usage"><code>(write-json-str data &amp; args)</code></div><div class="doc"><div class="markdown"><p>Write json to a string.  See options for <a href="charred.api.html#var-write-json">write-json</a>.</p>
-</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L633">view source</a></div></div></div></body></html>
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L645">view source</a></div></div><div class="public anchor" id="var-write-json-str"><h3>write-json-str</h3><div class="usage"><code>(write-json-str data &amp; args)</code></div><div class="doc"><div class="markdown"><p>Write json to a string.  See options for <a href="charred.api.html#var-write-json">write-json</a>.</p>
+</div></div><div class="src-link"><a href="https://github.com/cnuernber/charred/blob/master/src/charred/api.clj#L637">view source</a></div></div></div></body></html>
