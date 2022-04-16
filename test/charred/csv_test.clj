@@ -6,7 +6,7 @@
 (deftest funky-csv
   (is (= [["a,b" "c\"def\"" "one,two" "\"a,b,c\"def\"g\""]
           ["abba" "def" "1" "2"]
-          ["df" "ef" "5" nil]]
+          ["df" "ef" "5" ""]]
          (->> (read-csv (java.io.File. "test/data/funky.csv"))
               (vec)))))
 

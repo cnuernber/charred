@@ -2,7 +2,8 @@ package charred;
 
 
 import java.io.EOFException;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.LongPredicate;
 
 
@@ -89,24 +90,27 @@ public final class CSVReader {
     final CSVReader rdr;
     final CharBuffer sb;
     LongPredicate pred;
+    final JSONReader.ArrayReader arrayReader;
 
-    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred, char quot, char sep) {
+    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred, char quot, char sep,
+		     JSONReader.ArrayReader _aryReader) {
       rdr = new CSVReader(_r, quot, sep);
       sb = cb;
       pred = _pred;
+      arrayReader = _aryReader;
     }
     public void setPredicate(LongPredicate p) { pred = p; }
     public static final boolean emptyStr(String s) {
       return s == null || s.length() == 0;
     }
-    public static final boolean emptyRow(ArrayList<String> row) {
+    public static final boolean emptyRow(List<String> row) {
       int sz = row.size();
       return sz == 0 || (sz == 1 && emptyStr(row.get(0)));
     }
-    public final ArrayList<String> nextRow() throws EOFException {
+    public final Object nextRow() throws EOFException {
       //It turns out it is fast to just create a new row object
       //rather than clone an existing one.
-      final ArrayList<String> curRow = new ArrayList<String>(8);
+      Object curRow = arrayReader.newArray();
       sb.clear();
       int tag;
       int colidx = 0;
@@ -115,14 +119,15 @@ public final class CSVReader {
 	tag = rdr.csvRead(sb);
 	if(tag != QUOT) {
 	  if (p.test(colidx))
-	    curRow.add(sb.toString());
+	    curRow = arrayReader.onValue(curRow, sb.toString());
 	  ++colidx;
 	  sb.clear();
 	} else {
 	  rdr.csvReadQuote(sb);
 	}
       } while(tag > 0);
-      if (!(tag == EOF && emptyRow(curRow))) {
+      curRow = arrayReader.finalizeArray(curRow);
+      if (!(tag == EOF && emptyRow((List<String>)curRow))) {
 	return curRow;
       }
       else

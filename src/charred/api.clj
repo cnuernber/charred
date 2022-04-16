@@ -20,13 +20,14 @@
             [clojure.java.io :as io]
             [clojure.set :as set])
   (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
-            JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter]
+            JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter
+            JSONReader$ArrayReader]
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
            [java.lang AutoCloseable]
            [java.util.function Supplier LongPredicate BiConsumer]
            [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry]
            [java.io Reader StringReader Writer StringWriter]
-           [clojure.lang MapEntry Keyword Symbol]
+           [clojure.lang MapEntry Keyword Symbol Seqable IReduce]
            [java.sql Date]
            [java.time Instant]))
 
@@ -206,7 +207,14 @@
   (close [this]
     (set! first-row nil)
     (set! rdr nil)
-    @close-fn*))
+    @close-fn*)
+  Seqable
+  (seq [this] (coerce/supplier->seq this))
+  IReduce
+  (reduce [this rfn]
+    (coerce/reduce-supplier rfn this))
+  (reduce [this rfn init]
+    (coerce/reduce-supplier rfn init this)))
 
 
 (defn- ->character
@@ -227,15 +235,14 @@
 
 (defn read-csv-supplier
   "Read a csv into a row supplier.  Parse algorithm the same as clojure.data.csv although
-  this returns an iterator and each row is an ArrayList as opposed to a persistent
-  vector.  To convert a java.util.List into something with the same equal and hash semantics
-  of a persistent vector use either `tech.v3.datatype.ListPersistentVector` or `vec`.  To
-  convert an iterator to a sequence use iterator-seq.
+  this returns an java.util.function.Supplier which also implements AutoCloseable as well as
+  `clojure.lang.Seqable` and `clojure.lang.IReduce`.
 
-  The iterator returned derives from AutoCloseable and it will terminate the iteration and
+  The supplier returned derives from AutoCloseable and it will terminate the iteration and
   close the underlying iterator (and join the async thread) if (.close iter) is called.
+  Additionally it derives from `Seqable` and `IReduce`.
 
-  For a drop-in but much faster replacement to clojure.data.csv use [[read-csv-compat]].
+  For a drop-in but much faster replacement to clojure.data.csv use [[read-csv]].
 
   Options:
 
@@ -251,16 +258,22 @@
   * `:trim-trailing-whitespace?` - When true, trailing spaces and tabs are ignored.  Defaults
      to true
   * `:nil-empty-values?` - When true, empty strings are elided entirely and returned as nil
-     values. Defaults to true."
+     values. Defaults to false.
+  * `:profile` - Either `:immutable` or `:mutable`.  `:immutable` returns persistent vectors
+    while `:mutable` returns arraylists."
   ^CloseableSupplier [input & [options]]
   (let [rdr (reader->char-reader input options)
-        sb (CharBuffer. (get options :trim-leading-whitespace? true)
-                        (get options :trim-trailing-whitespace? true)
-                        (get options :nil-empty-values? true))
-        nil-empty? (get options :nil-empty-values? true)
+        nil-empty? (boolean (get options :nil-empty-values?))
+        sb (CharBuffer. (boolean (get options :trim-leading-whitespace? true))
+                        (boolean (get options :trim-trailing-whitespace? true))
+                        nil-empty?)
         quote (->character (get options :quote \"))
         separator (->character (get options :separator \,))
-        row-reader (CSVReader$RowReader. rdr sb true-unary-predicate quote separator)
+        ^JSONReader$ArrayReader array-iface (case (get options :profile :immutable)
+                                              :immutable JSONReader/immutableArrayReader
+                                              :mutable JSONReader/mutableArrayReader)
+        row-reader (CSVReader$RowReader. rdr sb true-unary-predicate quote separator
+                                         array-iface)
         ;;mutably changes row in place
         next-row (.nextRow row-reader)
         ^BitSet column-whitelist
@@ -290,15 +303,19 @@
                                    true-unary-predicate)
         close-fn* (delay
                     (when (get options :close-reader? true)
-                      (.close rdr)))]
-    (when (and next-row column-whitelist)
-      (let [^List cur-row next-row
-            nr (.size cur-row)
-            dnr (dec nr)]
-        (dotimes [idx nr]
-          (let [cur-idx (- dnr idx)]
-            (when-not (.get column-whitelist cur-idx)
-              (.remove cur-row (unchecked-int cur-idx)))))))
+                      (.close rdr)))
+        next-row (if (and next-row column-whitelist)
+                   (let [^List cur-row next-row
+                         nr (.size cur-row)]
+                     (loop [new-row (.newArray array-iface)
+                            idx 0]
+                       (if (< idx nr)
+                         (recur (if (.get column-whitelist idx)
+                                  (.onValue array-iface new-row (.get cur-row idx))
+                                  new-row)
+                                (unchecked-inc idx))
+                         (.finalizeArray array-iface new-row))))
+                   next-row)]
     (.setPredicate row-reader col-pred)
     (if next-row
       (CSVRowSupplier. row-reader next-row close-fn*)
@@ -306,7 +323,9 @@
         @close-fn*
         (reify CloseableSupplier
           (get [this] nil)
-          (close [this]))))))
+          (close [this])
+          Seqable
+          (seq [this] nil))))))
 
 
 ;;Count the things returned from a supplier
@@ -326,9 +345,8 @@
   (let [options (->> (partition 2 options)
                      (map vec)
                      (into {}))]
-    (->> (read-csv-supplier input options)
-         (coerce/supplier->seq)
-         (map vec))))
+    (-> (read-csv-supplier input (merge {:profile :immutable} options))
+        (seq))))
 
 
 (defn write-csv

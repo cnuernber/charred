@@ -194,6 +194,22 @@
   (do-supplier-seq (->supplier item)))
 
 
+(defn reduce-supplier
+  "Reduce a supplier as if the supplier were a sequence and
+  `clojure.core.reduce` was called."
+  ([rfn ^Supplier supp]
+   (if-let [item (.get supp)]
+     (reduce-supplier rfn item supp)
+     (rfn)))
+  ([rfn init ^Supplier supp]
+   (loop [init init]
+     (if-not (reduced? init)
+       (if-let [nitem (.get supp)]
+         (recur (rfn init nitem))
+         init)
+       @init))))
+
+
 (defmacro doiter
   "Execute body for every item in the iterable.  Expecting side effects, returns nil."
   [varname iterable & body]

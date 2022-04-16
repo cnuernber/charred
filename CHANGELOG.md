@@ -1,5 +1,8 @@
 # Charred Changelog
 
+## 1.003
+ * CSV parse option `:nil-empty-values?` defaults to false to match clojure.data.csv.
+
 ## 1.002
  * Replaced `:log-level` with `:log-fn` to eliminate tools.logging dependency.
  * Tested rotating buffers vs. allocating and found rotation to be a bit faster.
