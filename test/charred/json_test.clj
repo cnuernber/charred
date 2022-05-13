@@ -221,3 +221,9 @@
   (let [input (java.io.File. "test/data/json1k.json")
         js-data (charred/read-json input :key-fn keyword)]
     (is (= js-data (charred/read-json input :key-fn keyword :bufsize 7)))))
+
+
+(deftest namespace-kwd
+  (let [src-data #:a{:a 1, :b 2}]
+    (is (= src-data (-> (charred/write-json-str src-data)
+                        (charred/read-json :key-fn keyword))))))

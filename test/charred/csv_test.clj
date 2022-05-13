@@ -111,6 +111,22 @@ air, moon roof, loaded\",4799.00")
                         :column-whitelist ["char" "word"])))))
 
 
+(deftest integer-whitelist-test
+  (is (= [["char" "word"]
+          ["t" "true"]
+          ["f" "False"]
+          ["y" "YES"]
+          ["n" "NO"]
+          ["T" "positive"]
+          ["F" "negative"]
+          ["Y" "yep"]
+          ["N" "not"]
+          ["A" "pos"]
+          ["z" "neg"]]
+         (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
+                        :column-whitelist [1 2])))))
+
+
 (deftest csv-odd-bufsize
   ;;Test to ensure that contiuning any particular parse pathway
   ;;into a new buffer works.

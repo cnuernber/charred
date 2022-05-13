@@ -1,7 +1,13 @@
 # Charred Changelog
+## 1.005
+ * [Issue 3](https://github.com/cnuernber/charred/issues/3) - Namespaced keywords are written out with their namespaces.
+
+## 1.004
+ * Integer column indexes can be used in whitelists and blacklists.
 
 ## 1.003
  * CSV parse option `:nil-empty-values?` defaults to false to match clojure.data.csv.
+ * The supplier returned from read-csv-supplier now implements IReduce and Seqable.
 
 ## 1.002
  * Replaced `:log-level` with `:log-fn` to eliminate tools.logging dependency.

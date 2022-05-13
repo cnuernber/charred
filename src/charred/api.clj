@@ -60,8 +60,7 @@
   CloseableSupplier
   (get [this]
     (when reader
-      (let [^chars next-buf (aget buffers (rem cur-buf-idx
-                                               (alength buffers)))
+      (let [^chars next-buf (aget buffers (rem cur-buf-idx (alength buffers)))
             nchars (.read reader next-buf)]
         (set! cur-buf-idx (unchecked-inc cur-buf-idx))
         (cond
@@ -236,7 +235,7 @@
 
 (defn read-csv-supplier
   "Read a csv into a row supplier.  Parse algorithm the same as clojure.data.csv although
-  this returns an java.util.function.Supplier which also implements AutoCloseable as well as
+  this returns a java.util.function.Supplier which also implements AutoCloseable as well as
   `clojure.lang.Seqable` and `clojure.lang.IReduce`.
 
   The supplier returned derives from AutoCloseable and it will terminate the reading and
@@ -253,10 +252,11 @@
   * `:separator` - Field separator - defaults to \\,.
   * `:quote` - Quote specifier - defaults to //\".
   * `:close-reader?` - Close the reader when iteration is finished - defaults to true.
-  * `:column-whitelist` - Sequence of allowed column names.
-  * `:column-blacklist` - Sequence of dis-allowed column names.  When conflicts with
+  * `:column-whitelist` - Sequence of allowed column names or indexes.
+  * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
      `:column-whitelist` then `:column-whitelist` wins.
-  * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults to true.
+  * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
+     to true.
   * `:trim-trailing-whitespace?` - When true, trailing spaces and tabs are ignored.  Defaults
      to true
   * `:nil-empty-values?` - When true, empty strings are elided entirely and returned as nil
@@ -278,19 +278,20 @@
                                          array-iface)
         ;;mutably changes row in place
         next-row (.nextRow row-reader)
+        ensure-long (fn [data] (if (number? data) (long data) data))
         ^BitSet column-whitelist
         (when (or (contains? options :column-whitelist)
                   (contains? options :column-blacklist))
           (let [whitelist (when-let [data (get options :column-whitelist)]
-                            (set data))
+                            (set (map ensure-long data)))
                 blacklist (when-let [data (get options :column-blacklist)]
-                            (set/difference (set data) (or whitelist #{})))
+                            (set/difference (set (map ensure-long data)) (or whitelist #{})))
                 indexes
                 (->> next-row
                      (map-indexed
                       (fn [col-idx cname]
-                        (when (or (and whitelist (whitelist cname))
-                                  (and blacklist (not (blacklist cname))))
+                        (when (or (and whitelist (or (whitelist cname) (whitelist col-idx)))
+                                  (and blacklist (not (or (blacklist cname) (blacklist col-idx)))))
                           col-idx)))
                      (remove nil?)
                      (seq))
@@ -544,6 +545,12 @@
     "Automatic conversion of some subset of types to something acceptible to json.
 Defaults to toString for types that aren't representable in json."))
 
+(defn- fullname
+  ^String [item]
+  (if-let [kns (namespace item)]
+    (str kns "/" (name item))
+    (name item)))
+
 
 (extend-protocol PToJSON
   Object
@@ -565,9 +572,9 @@ Defaults to toString for types that aren't representable in json."))
   String
   (->json-data [item] item)
   Keyword
-  (->json-data [item] (name item))
+  (->json-data [item] (fullname item))
   Symbol
-  (->json-data [item] (name item)))
+  (->json-data [item] (fullname item)))
 
 
 (def ^{:tag java.util.function.BiConsumer
