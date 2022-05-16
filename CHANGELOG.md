@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.006
+ * [Issue 4](https://github.com/cnuernber/charred/issues/4) - Setting indent-str to nil really should mean no whitespace.
+ 
 ## 1.005
  * [Issue 3](https://github.com/cnuernber/charred/issues/3) - Namespaced keywords are written out with their namespaces.
 
