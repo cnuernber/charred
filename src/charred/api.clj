@@ -603,7 +603,7 @@ Defaults to toString for types that aren't representable in json."))
   (let [esc-js? (boolean (get options :escape-js-separators true))
         esc-uni? (boolean (get options :escape-unicode true))
         esc-slash? (boolean (get options :escape-slash true))
-        ^String indent-str (if-let [opt  (get options :indent-str "  ")]
+        ^String indent-str (if-let [opt (get options :indent-str nil)]
                              (str opt)
                              nil)
         obj-fn (coerce/->bi-consumer (get options :obj-fn default-obj-fn))]
