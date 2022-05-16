@@ -173,7 +173,7 @@ public class JSONWriter implements AutoCloseable {
     --indent;
   }
   public void writeMap(Iterator<Map.Entry> iter) throws Exception {
-    boolean hasIndent = indentStr != null;
+    final boolean hasIndent = indentStr != null;
     if (hasIndent) {
       if (indent != 0) w.write('\n');
       writeIndent();
@@ -196,7 +196,10 @@ public class JSONWriter implements AutoCloseable {
       }
       first = false;
       writeString((String)k);
-      w.write(": ");
+      if(hasIndent)
+	w.write(": ");
+      else
+	w.write(":");
       writeObject(v);
     }
     --indent;

@@ -227,3 +227,9 @@
   (let [src-data #:a{:a 1, :b 2}]
     (is (= src-data (-> (charred/write-json-str src-data)
                         (charred/read-json :key-fn keyword))))))
+
+
+(deftest packed-serialization
+  (is (= "{\"a\":1,\"b\":2.3,\"c\":\"c1\"}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"} :indent-str "")))
+  (is (= "{\"a\":1,\"b\":2.3,\"c\":\"c1\"}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"} :indent-str nil)))
+  (is (= "{\n  \"a\": 1,\n  \"b\": 2.3,\n  \"c\": \"c1\"\n}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"}))))
