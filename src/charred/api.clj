@@ -29,7 +29,8 @@
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
            [java.lang AutoCloseable]
            [java.util.function Supplier LongPredicate BiConsumer]
-           [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry]
+           [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry Set
+            ArrayList]
            [java.io Reader StringReader Writer StringWriter]
            [clojure.lang MapEntry Keyword Symbol Seqable IReduce]
            [java.sql Date]
@@ -555,16 +556,20 @@ Defaults to toString for types that aren't representable in json."))
 (extend-protocol PToJSON
   Object
   (->json-data [item]
-    (if (or (instance? Map item)
-            (instance? List item)
-            (.isArray (.getClass ^Object item)))
+    (cond
+      (or (instance? Map item)
+          (instance? List item)
+          (.isArray (.getClass ^Object item)))
       item
-      ;;Default to convert sql date to instant.
-      (if (instance? java.sql.Date item)
-        (-> (.getTime ^java.sql.Date item)
-            (Instant/ofEpochMilli)
-            (.toString))
-        (.toString ^Object item))))
+      (instance? java.sql.Date item)
+      (-> (.getTime ^java.sql.Date item)
+          (Instant/ofEpochMilli)
+          (.toString))
+      (instance? Set item)
+      (doto (ArrayList.)
+        (.addAll ^Collectoin item))
+      :else
+      (.toString ^Object item)))
   Boolean
   (->json-data [item] item)
   Number

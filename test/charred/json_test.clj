@@ -234,3 +234,8 @@
   (is (= "{\"a\":1,\"b\":2.3,\"c\":\"c1\"}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"} :indent-str nil)))
   (is (= "{\"a\":1,\"b\":2.3,\"c\":\"c1\"}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"})))
   (is (= "{\n  \"a\": 1,\n  \"b\": 2.3,\n  \"c\": \"c1\"\n}" (charred/write-json-str {:a 1 :b 2.3 :c "c1"} :indent-str "  "))))
+
+
+(deftest serialize-sets
+  (is (= "{\"id\":\"15\",\"vals\":[{\"id\":\"492\",\"views\":59},{\"id\":\"44\",\"views\":4}]}"
+         (charred/write-json-str {:id "15" :vals #{{:id "44" :views 4} {:id "492" :views 59}}}))))
