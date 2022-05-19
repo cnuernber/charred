@@ -143,3 +143,8 @@ air, moon roof, loaded\",4799.00")
           ["10" "z" "neg" "false" "false" "negative"]]
          (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
                         :bufsize 7 :n-buffers -1)))))
+
+
+(deftest carriage-return-csv
+  (is (= [["header"] ["1"]]
+         (mapv vec (charred.api/read-csv "header\r1\r")))))

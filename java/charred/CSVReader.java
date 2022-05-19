@@ -73,7 +73,7 @@ public final class CSVReader {
 	  return EOL;
 	} else if (curChar == '\r') {
 	  sb.append(buffer, startpos, pos);
-	  if (reader.readFrom(pos+1) != '\n') {
+	  if (reader.readFrom(pos+1) != '\n' && !reader.eof()) {
 	    reader.unread();
 	  }
 	  return EOL;

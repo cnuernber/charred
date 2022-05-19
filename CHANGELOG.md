@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.008
+ * [issue 5](https://github.com/cnuernber/charred/issues/5) - exception with csv ending with \r.
+ 
 ## 1.007
  * Writing packed json is now the default as this matches clojure.data.json and cheshire.  To get the hold behavior back use `:indent-str "  "`.
 
