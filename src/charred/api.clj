@@ -567,7 +567,7 @@ Defaults to toString for types that aren't representable in json."))
           (.toString))
       (instance? Set item)
       (doto (ArrayList.)
-        (.addAll ^Collectoin item))
+        (.addAll ^Collection item))
       :else
       (.toString ^Object item)))
   Boolean
