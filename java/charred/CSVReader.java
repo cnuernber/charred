@@ -69,6 +69,7 @@ public final class CSVReader {
 	  return;
 	}
       }
+      buffer = reader.nextBuffer();
     }
     //EOF encountered inside quote
   }
