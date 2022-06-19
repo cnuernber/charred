@@ -1,4 +1,6 @@
 # Charred Changelog
+## 1.010
+ * Fixed issue with comments in csv when comment begins field.
 
 ## 1.009
  * `:comment-char` option is now supported and defaults to `#`.

@@ -74,18 +74,18 @@ public final class CSVReader {
     //EOF encountered inside quote
   }
   //Read a row from a CSV file.
-  final int csvRead(CharBuffer sb) throws EOFException {
+  final int csvRead(CharBuffer sb, final boolean enableComment) throws EOFException {
     char[] buffer = reader.buffer();
     final char localSep = sep;
     final char localQuot = quot;
     final char localComment = comment;
-    boolean first = true;
+    boolean ec = enableComment;
     while(buffer != null) {
       final int startpos = reader.position();
       final int len = buffer.length;
       for(int pos = startpos; pos < len; ++pos) {
 	final char curChar = buffer[pos];
-	if (curChar == localComment && first) {
+	if (curChar == localComment && ec) {
 	  reader.position(pos + 1);
 	  return COMMENT;
 	} else if (curChar == localQuot) {
@@ -107,7 +107,7 @@ public final class CSVReader {
 	  }
 	  return EOL;
 	}
-	first = false;
+	ec = false;
       }
       sb.append(buffer, startpos, len);
       buffer = reader.nextBuffer();
@@ -144,9 +144,11 @@ public final class CSVReader {
       sb.clear();
       int tag;
       int colidx = 0;
+      boolean comment = true;
       final LongPredicate p = pred;
       do {
-	tag = rdr.csvRead(sb);
+	tag = rdr.csvRead(sb, comment);
+	comment = false;
 	if(tag != QUOT) {
 	  if(tag == COMMENT) {
 	    rdr.csvReadComment();

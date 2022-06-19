@@ -152,10 +152,32 @@ air, moon roof, loaded\",4799.00")
 
 ;;(vec (read-csv (java.io.File. "test/data/csv-comment.csv")))
 (deftest csv-comment-file
-  (is (= [["Geneid  Chr Start   End Strand  Length  /ExpOut/220601_NS500751_0199_AHGMNMBGXL/Out/Rep/Bams/T4-1393NDC180m-a.bam"]
-          ["SP_0001 NC_003028   197 1558    +   1362    566"]
-          ["SP_0002 NC_003028   1717    2853    +   1137    603"]
-          ["SP_0003 NC_003028   2864    3112    +   249 67"]
-          ["SP_#003 #NC_003028  2864    3112    +   249 67"]
-          ["SP_#003 #NC_003028  2864    3112    +   249 67"]]
+  (is (= [["Geneid"
+           "Chr"
+           "Start"
+           "End"
+           "Strand"
+           "Length"
+           "/ExpOut/220601_NS500751_0199_AHGMNMBGXL/Out/Rep/Bams/T4-1393NDC180m-a.bam"]
+          ["SP_0001" "NC_003028" "197 1558" "+" "1362" "566"]
+          ["SP_0002" "NC_003028" "1717" "" "2853" "+" "1137" "603"]
+          ["SP_0003" "NC_003028" "2864" "" "3112" "+" "249" "67"]
+          ["SP_#003" "#NC_003028" "2864" "" "3112" "+" "249" "67"]
+          ["SP_#003" "#NC_003028" "2864" "" "3112" "+" "249" "67"]]
          (vec (read-csv (java.io.File. "test/data/csv-comment.csv"))))))
+
+
+(deftest csv-comment-twitterfeed
+  (is (= [["id" "label" "tweet"]
+          ["1"
+           "0"
+           "@user when a father is dysfunctional and is so selfish he drags his kids into his dysfunction.   #run"]
+          ["2"
+           "0"
+           "@user @user thanks for #lyft credit i can't use cause they don't offer wheelchair vans in pdx.    #disapointed #getthanked"]
+          ["3" "0" "bihday your majesty"]
+          ["4"
+           "0"
+           "#model   i love u take with u all the time in urð±!!! ððððð¦ð¦ð¦"]
+          ["5" "0" "factsguide: society now    #motivation"]]
+         (vec (read-csv (java.io.File. "test/data/comment2.csv"))))))
