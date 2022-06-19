@@ -4,6 +4,7 @@ package charred;
 import java.io.EOFException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -35,6 +36,7 @@ public final class JSONReader implements AutoCloseable {
 	return ((ITransientMap)obj).persistent();
       }
     };
+  @SuppressWarnings("unchecked")
   public static final ObjReader mutableObjReader = new ObjReader() {
       public Object newObj() { return new HashMap<Object,Object>(); }
       public Object onKV(Object obj, Object k, Object v) {
@@ -46,10 +48,11 @@ public final class JSONReader implements AutoCloseable {
     public final ArrayList<Object> data;
     public JSONObj(ArrayList<Object> d) { data = d; }
   }
+  @SuppressWarnings("unchecked")
   public static final ObjReader rawObjReader = new ObjReader() {
       public Object newObj() { return new ArrayList<Object>(8); }
       public Object onKV(Object obj, Object k, Object v) {
-	final ArrayList<Object> ary = (ArrayList<Object>)obj;
+	final List ary = (List)obj;
 	ary.add(k);
 	ary.add(v);
 	return ary;
@@ -75,8 +78,9 @@ public final class JSONReader implements AutoCloseable {
     };
   public static final ArrayReader mutableArrayReader = new ArrayReader() {
       public Object newArray() { return new ArrayList<Object>(8); }
+      @SuppressWarnings("unchecked")
       public Object onValue(Object ary, Object v) {
-	((ArrayList<Object>)ary).add(v);
+	((List)ary).add(v);
 	return ary;
       }
     };

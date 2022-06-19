@@ -148,3 +148,14 @@ air, moon roof, loaded\",4799.00")
 (deftest carriage-return-csv
   (is (= [["header"] ["1"]]
          (mapv vec (charred.api/read-csv "header\r1\r")))))
+
+
+;;(vec (read-csv (java.io.File. "test/data/csv-comment.csv")))
+(deftest csv-comment-file
+  (is (= [["Geneid  Chr Start   End Strand  Length  /ExpOut/220601_NS500751_0199_AHGMNMBGXL/Out/Rep/Bams/T4-1393NDC180m-a.bam"]
+          ["SP_0001 NC_003028   197 1558    +   1362    566"]
+          ["SP_0002 NC_003028   1717    2853    +   1137    603"]
+          ["SP_0003 NC_003028   2864    3112    +   249 67"]
+          ["SP_#003 #NC_003028  2864    3112    +   249 67"]
+          ["SP_#003 #NC_003028  2864    3112    +   249 67"]]
+         (vec (read-csv (java.io.File. "test/data/csv-comment.csv"))))))

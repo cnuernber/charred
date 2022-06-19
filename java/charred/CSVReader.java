@@ -11,15 +11,18 @@ public final class CSVReader {
   final CharReader reader;
   final char quot;
   final char sep;
+  final char comment;
   public static final int EOF=-1;
   public static final int EOL=-2;
   public static final int SEP=1;
   public static final int QUOT=2;
+  public static final int COMMENT=3;
 
-  public CSVReader(CharReader rdr, char _quot, char _sep) {
+  public CSVReader(CharReader rdr, char _quot, char _sep, char _comment) {
     reader = rdr;
     quot = _quot;
     sep = _sep;
+    comment = _comment;
   }
 
   final void csvReadQuote(CharBuffer sb) throws EOFException {
@@ -49,17 +52,42 @@ public final class CSVReader {
     }
     throw new EOFException("EOF encountered within quote");
   }
-  //Read a row from a CSV file.
-  final int csvRead(CharBuffer sb) throws EOFException {
+  final void csvReadComment() throws EOFException {
     char[] buffer = reader.buffer();
-    final char localSep = sep;
-    final char localQuot = quot;
     while(buffer != null) {
       final int startpos = reader.position();
       final int len = buffer.length;
       for(int pos = startpos; pos < len; ++pos) {
 	final char curChar = buffer[pos];
-	if (curChar == localQuot) {
+	if (curChar == '\n') {
+	  reader.position(pos + 1);
+	  return;
+	} else if (curChar == '\r') {
+	  if (reader.readFrom(pos+1) != '\n' && !reader.eof()) {
+	    reader.unread();
+	  }
+	  return;
+	}
+      }
+    }
+    //EOF encountered inside quote
+  }
+  //Read a row from a CSV file.
+  final int csvRead(CharBuffer sb) throws EOFException {
+    char[] buffer = reader.buffer();
+    final char localSep = sep;
+    final char localQuot = quot;
+    final char localComment = comment;
+    boolean first = true;
+    while(buffer != null) {
+      final int startpos = reader.position();
+      final int len = buffer.length;
+      for(int pos = startpos; pos < len; ++pos) {
+	final char curChar = buffer[pos];
+	if (curChar == localComment && first) {
+	  reader.position(pos + 1);
+	  return COMMENT;
+	} else if (curChar == localQuot) {
 	  sb.append(buffer, startpos, pos);
 	  reader.position(pos + 1);
 	  return QUOT;
@@ -78,6 +106,7 @@ public final class CSVReader {
 	  }
 	  return EOL;
 	}
+	first = false;
       }
       sb.append(buffer, startpos, len);
       buffer = reader.nextBuffer();
@@ -92,9 +121,9 @@ public final class CSVReader {
     LongPredicate pred;
     final JSONReader.ArrayReader arrayReader;
 
-    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred, char quot, char sep,
+    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred, char quot, char sep, char comment,
 		     JSONReader.ArrayReader _aryReader) {
-      rdr = new CSVReader(_r, quot, sep);
+      rdr = new CSVReader(_r, quot, sep, comment);
       sb = cb;
       pred = _pred;
       arrayReader = _aryReader;
@@ -103,9 +132,9 @@ public final class CSVReader {
     public static final boolean emptyStr(String s) {
       return s == null || s.length() == 0;
     }
-    public static final boolean emptyRow(List<String> row) {
+    public static final boolean emptyRow(List row) {
       int sz = row.size();
-      return sz == 0 || (sz == 1 && emptyStr(row.get(0)));
+      return sz == 0 || (sz == 1 && emptyStr((String)row.get(0)));
     }
     public final Object nextRow() throws EOFException {
       //It turns out it is fast to just create a new row object
@@ -118,16 +147,20 @@ public final class CSVReader {
       do {
 	tag = rdr.csvRead(sb);
 	if(tag != QUOT) {
-	  if (p.test(colidx))
-	    curRow = arrayReader.onValue(curRow, sb.toString());
-	  ++colidx;
-	  sb.clear();
+	  if(tag == COMMENT) {
+	    rdr.csvReadComment();
+	  } else {
+	    if (p.test(colidx))
+	      curRow = arrayReader.onValue(curRow, sb.toString());
+	    ++colidx;
+	    sb.clear();
+	  }
 	} else {
 	  rdr.csvReadQuote(sb);
 	}
       } while(tag > 0);
       curRow = arrayReader.finalizeArray(curRow);
-      if (!(tag == EOF && emptyRow((List<String>)curRow))) {
+      if (!(tag == EOF && emptyRow((List)curRow))) {
 	return curRow;
       }
       else

@@ -1,3 +1,4 @@
+# file starts with comment
 id, char,   word,     bool,   boolstr, boolean
 1,  t,      true,     true,   true,    t
 2,  f,      False,    true,   true,    y
@@ -5,6 +6,7 @@ id, char,   word,     bool,   boolstr, boolean
 4,  n,      NO,       false,  false,   f
 5,  T,      positive, true,   true,    true
 6,  F,      negative, false,  false,   false
+# comment in middle of file
 7,  Y,      yep,      true,   true,    positive
 8,  N,      not,      false,  false,   negative
 9,  A,      pos,      false,  False,   negative

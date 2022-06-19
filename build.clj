@@ -18,8 +18,7 @@
   (b/javac {:src-dirs ["java"]
             :class-dir class-dir
             :basis basis
-            :javac-opts ["-source" "8" "-target" "8" ;"-Xlint:unchecked"
-                         ]}))
+            :javac-opts ["-source" "8" "-target" "8" "-Xlint:unchecked"]}))
 
 (defn jar [_]
   (compile nil)

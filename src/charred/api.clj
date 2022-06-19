@@ -256,6 +256,8 @@
   * `:column-whitelist` - Sequence of allowed column names or indexes.
   * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
      `:column-whitelist` then `:column-whitelist` wins.
+  * `:comment-char` - Defaults to #.  Rows beginning with character are discarded with no
+    further processing.
   * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
      to true.
   * `:trim-trailing-whitespace?` - When true, trailing spaces and tabs are ignored.  Defaults
@@ -272,10 +274,11 @@
                         nil-empty?)
         quote (->character (get options :quote \"))
         separator (->character (get options :separator \,))
+        comment (->character (get options :comment-char \#))
         ^JSONReader$ArrayReader array-iface (case (get options :profile :immutable)
                                               :immutable JSONReader/immutableArrayReader
                                               :mutable JSONReader/mutableArrayReader)
-        row-reader (CSVReader$RowReader. rdr sb true-unary-predicate quote separator
+        row-reader (CSVReader$RowReader. rdr sb true-unary-predicate quote separator comment
                                          array-iface)
         ;;mutably changes row in place
         next-row (.nextRow row-reader)
