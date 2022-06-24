@@ -257,7 +257,7 @@
   * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
      `:column-whitelist` then `:column-whitelist` wins.
   * `:comment-char` - Defaults to #.  Rows beginning with character are discarded with no
-    further processing.
+    further processing.  Setting the comment-char to nil or `(char 0)` disables comment lines.
   * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
      to true.
   * `:trim-trailing-whitespace?` - When true, trailing spaces and tabs are ignored.  Defaults
@@ -274,7 +274,9 @@
                         nil-empty?)
         quote (->character (get options :quote \"))
         separator (->character (get options :separator \,))
-        comment (->character (get options :comment-char \#))
+        comment (->character (if-let [cchar (get options :comment-char \#)]
+                               cchar
+                               (char 0)))
         ^JSONReader$ArrayReader array-iface (case (get options :profile :immutable)
                                               :immutable JSONReader/immutableArrayReader
                                               :mutable JSONReader/mutableArrayReader)
@@ -347,11 +349,17 @@
 
 (defn read-csv
   "Read a csv returning a clojure.data.csv-compatible sequence.  For options
-  see [[read-csv-supplier]]."
+  see [[read-csv-supplier]].
+
+  An important note is that `:comment-char` is disabled by default during read-csv
+  for backward compatibility while it is not disabled by default during
+  read-csv-supplier."
   [input & options]
   (let [options (->> (partition 2 options)
                      (map vec)
-                     (into {}))]
+                     (into {}))
+        options (update options :comment-char (fn [data]
+                                                (if data data nil)))]
     (-> (read-csv-supplier input (merge {:profile :immutable} options))
         (seq))))
 
@@ -667,3 +675,17 @@ Defaults to toString for types that aren't representable in json."))
     (fn [output data]
       (with-open [^JSONWriter writer (writer-fn output)]
         (.writeObject writer data)))))
+
+
+(comment
+  (defn add-all-things
+    [^Supplier data]
+    (let [rv (java.util.ArrayList.)]
+      (try
+        (loop [d (.get data)]
+          (when d
+            (.add rv d)
+            (recur (.get data))))
+        (catch Exception e (println e)))
+      rv))
+  )

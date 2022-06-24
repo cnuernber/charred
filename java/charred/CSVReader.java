@@ -50,7 +50,7 @@ public final class CSVReader {
       sb.append(buffer,startpos,len);
       buffer = reader.nextBuffer();
     }
-    throw new EOFException("EOF encountered within quote");
+    throw new EOFException("EOF encountered within quote - " + sb.toString());
   }
   final void csvReadComment() throws EOFException {
     char[] buffer = reader.buffer();
@@ -115,6 +115,8 @@ public final class CSVReader {
     return EOF;
   }
 
+  public boolean commentsEnabled() { return commentChar != 0; }
+
   public static final class RowReader
   {
     final CSVReader rdr;
@@ -144,7 +146,7 @@ public final class CSVReader {
       sb.clear();
       int tag;
       int colidx = 0;
-      boolean comment = true;
+      boolean comment = rdr.commentsEnabled();
       final LongPredicate p = pred;
       do {
 	tag = rdr.csvRead(sb, comment);

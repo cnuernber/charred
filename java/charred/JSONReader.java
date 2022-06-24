@@ -355,12 +355,7 @@ public final class JSONReader implements AutoCloseable {
   }
 
   public final String context() throws Exception {
-    final char[] buf = reader.buffer();
-    final int pos = reader.position();
-    final int len = buf.length;
-    int startpos = Math.max(0, pos - 200);
-    int endpos = Math.min(len-1, pos + 200);
-    return new String(buf, startpos, endpos - startpos);
+    return reader.context(200);
   }
 
   public final Object readObject() throws Exception {

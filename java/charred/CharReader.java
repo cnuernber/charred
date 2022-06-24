@@ -136,4 +136,14 @@ public final class CharReader implements AutoCloseable
       buffers = null;
     }
   }
+
+  //Reads anything possible around the area.
+  public final String context(int nChars) throws Exception {
+    final char[] buf = buffer();
+    final int pos = position();
+    final int len = buf.length;
+    int startpos = Math.max(0, pos - nChars);
+    int endpos = Math.min(len-1, pos + nChars);
+    return new String(buf, startpos, endpos - startpos);
+  }
 }
