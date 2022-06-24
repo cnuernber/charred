@@ -115,7 +115,7 @@ public final class CSVReader {
     return EOF;
   }
 
-  public boolean commentsEnabled() { return commentChar != 0; }
+  public boolean commentsEnabled() { return comment != 0; }
 
   public static final class RowReader
   {

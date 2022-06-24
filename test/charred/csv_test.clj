@@ -1,5 +1,5 @@
 (ns charred.csv-test
-  (:require [charred.api :refer [read-csv]]
+  (:require [charred.api :refer [read-csv] :as api]
             [clojure.test :refer [deftest is]]))
 
 
@@ -82,10 +82,12 @@ air, moon roof, loaded\",4799.00")
 
 
 (deftest trim-leading
-  (let [header (first (read-csv (java.io.File. "test/data/datatype_parser.csv")))]
+  (let [header (first (read-csv (java.io.File. "test/data/datatype_parser.csv")
+                                :comment-char \#))]
     (is (= "word" (header 2))))
   (let [header (first (read-csv (java.io.File. "test/data/datatype_parser.csv")
-                                :trim-leading-whitespace? false))]
+                                :trim-leading-whitespace? false
+                                :comment-char \#))]
     (is (= "   word" (header 2)))))
 
 
@@ -108,7 +110,8 @@ air, moon roof, loaded\",4799.00")
           ["A" "pos"]
           ["z" "neg"]]
          (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
-                        :column-whitelist ["char" "word"])))))
+                        :column-whitelist ["char" "word"]
+                        :comment-char \#)))))
 
 
 (deftest integer-whitelist-test
@@ -124,7 +127,8 @@ air, moon roof, loaded\",4799.00")
           ["A" "pos"]
           ["z" "neg"]]
          (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
-                        :column-whitelist [1 2])))))
+                        :column-whitelist [1 2]
+                        :comment-char \#)))))
 
 
 (deftest csv-odd-bufsize
@@ -142,7 +146,8 @@ air, moon roof, loaded\",4799.00")
           ["9" "A" "pos" "false" "False" "negative"]
           ["10" "z" "neg" "false" "false" "negative"]]
          (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
-                        :bufsize 7 :n-buffers -1)))))
+                        :bufsize 7 :n-buffers -1
+                        :comment-char \#)))))
 
 
 (deftest carriage-return-csv
@@ -164,7 +169,7 @@ air, moon roof, loaded\",4799.00")
           ["SP_0003" "NC_003028" "2864" "" "3112" "+" "249" "67"]
           ["SP_#003" "#NC_003028" "2864" "" "3112" "+" "249" "67"]
           ["SP_#003" "#NC_003028" "2864" "" "3112" "+" "249" "67"]]
-         (vec (read-csv (java.io.File. "test/data/csv-comment.csv"))))))
+         (vec (seq (api/read-csv-supplier (java.io.File. "test/data/csv-comment.csv")))))))
 
 
 (deftest csv-comment-twitterfeed
@@ -180,4 +185,4 @@ air, moon roof, loaded\",4799.00")
            "0"
            "#model   i love u take with u all the time in urð±!!! ððððð¦ð¦ð¦"]
           ["5" "0" "factsguide: society now    #motivation"]]
-         (vec (read-csv (java.io.File. "test/data/comment2.csv"))))))
+         (vec (seq (api/read-csv-supplier (java.io.File. "test/data/comment2.csv")))))))
