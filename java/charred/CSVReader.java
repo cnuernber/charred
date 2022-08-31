@@ -74,12 +74,13 @@ public final class CSVReader {
     //EOF encountered inside quote
   }
   //Read a row from a CSV file.
-  final int csvRead(CharBuffer sb, final boolean enableComment) throws EOFException {
+  final int csvRead(CharBuffer sb, final boolean enableComment, final boolean enableQuote) throws EOFException {
     char[] buffer = reader.buffer();
     final char localSep = sep;
     final char localQuot = quot;
     final char localComment = comment;
     boolean ec = enableComment;
+    boolean eq = enableQuote;
     while(buffer != null) {
       final int startpos = reader.position();
       final int len = buffer.length;
@@ -88,7 +89,7 @@ public final class CSVReader {
 	if (curChar == localComment && ec) {
 	  reader.position(pos + 1);
 	  return COMMENT;
-	} else if (curChar == localQuot) {
+	} else if (curChar == localQuot && eq) {
 	  sb.append(buffer, startpos, pos);
 	  reader.position(pos + 1);
 	  return QUOT;
@@ -108,6 +109,7 @@ public final class CSVReader {
 	  return EOL;
 	}
 	ec = false;
+	eq = false;
       }
       sb.append(buffer, startpos, len);
       buffer = reader.nextBuffer();
@@ -147,10 +149,12 @@ public final class CSVReader {
       int tag;
       int colidx = 0;
       boolean comment = rdr.commentsEnabled();
+      boolean quote = true;
       final LongPredicate p = pred;
       do {
-	tag = rdr.csvRead(sb, comment);
+	tag = rdr.csvRead(sb, comment, quote);
 	comment = false;
+	quote = false;
 	if(tag != QUOT) {
 	  if(tag == COMMENT) {
 	    rdr.csvReadComment();
@@ -159,6 +163,7 @@ public final class CSVReader {
 	      curRow = arrayReader.onValue(curRow, sb.toString());
 	    ++colidx;
 	    sb.clear();
+	    quote = true;
 	  }
 	} else {
 	  rdr.csvReadQuote(sb);

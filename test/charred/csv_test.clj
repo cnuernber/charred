@@ -186,3 +186,8 @@ air, moon roof, loaded\",4799.00")
            "#model   i love u take with u all the time in urð±!!! ððððð¦ð¦ð¦"]
           ["5" "0" "factsguide: society now    #motivation"]]
          (vec (seq (api/read-csv-supplier (java.io.File. "test/data/comment2.csv")))))))
+
+
+(deftest quote-not-beginning-of-line
+  (is (= [["a" "3\""] ["b" "4\""] ["c" "5"]]
+         (vec (api/read-csv "a,3\"\nb,4\"\nc,5")))))

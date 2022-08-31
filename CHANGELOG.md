@@ -1,4 +1,8 @@
 # Charred Changelog
+
+## 1.012
+ * [issue 8](https://github.com/cnuernber/charred/issues/8) - Quote not at beginning of line.
+
 ## 1.011
  * `:comment-char` is disabled for read-csv for backward compatibility with clojure.data.csv.
 
