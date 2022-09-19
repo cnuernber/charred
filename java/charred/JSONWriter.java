@@ -113,17 +113,17 @@ public class JSONWriter implements AutoCloseable {
       final Double dn = (Double)n;
       if (!Double.isFinite(dn)) {
 	if (Double.isNaN(dn))
-	  throw new Exception("JSON encoding error - NAN detected");
+	  throw new CharredException("JSON encoding error - NAN detected");
 	else
-	  throw new Exception("JSON encoding error - +/-INF detected");
+	  throw new CharredException("JSON encoding error - +/-INF detected");
       }
     } else if (n instanceof Float) {
       final Float dn = (Float)n;
       if (!Float.isFinite(dn)) {
 	if (Float.isNaN(dn))
-	  throw new Exception("JSON encoding error - NAN detected");
+	  throw new CharredException("JSON encoding error - NAN detected");
 	else
-	  throw new Exception("JSON encoding error - +/-INF detected");
+	  throw new CharredException("JSON encoding error - +/-INF detected");
       }
     }
     w.write(n.toString());
@@ -186,7 +186,7 @@ public class JSONWriter implements AutoCloseable {
       Object k = val.getKey();
       Object v = val.getValue();
       if (! (k instanceof String) )
-	throw new Exception("JSON encoding error - Map keys must be strings");
+	throw new CharredException("JSON encoding error - Map keys must be strings");
       if (!first) {
 	w.write(",");
       }

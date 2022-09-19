@@ -160,7 +160,7 @@ public final class JSONReader implements AutoCloseable {
 	    final char[] temp = tempRead(4);
 	    cb.append((char)(Integer.parseInt(new String(temp, 0, 4), 16)));
 	    break;
-	  default: throw new Exception("Unrecognized escape character: " + data);
+	  default: throw new CharredException("JSON parse error - Unrecognized escape character: " + data);
 	  }
 	  buffer = reader.buffer();
 	  startpos = reader.position();
@@ -171,7 +171,7 @@ public final class JSONReader implements AutoCloseable {
       cb.append(buffer,startpos,len);
       buffer = reader.nextBuffer();
     }
-    throw new EOFException("EOF while reading string: " + cb.toString());
+    throw new EOFException("JSON parse error - EOF while reading string: " + cb.toString());
   }
   final Object finalizeNumber(CharBuffer cb, boolean integer, final char firstChar,
 			      final int dotIndex)
@@ -182,11 +182,11 @@ public final class JSONReader implements AutoCloseable {
       //Definitely an integer
       if ((nElems > 1 && firstChar == '0') ||
 	  (nElems > 2 && firstChar == '-' && cbBuffer[1] == '0'))
-	throw new Exception("JSON parse error - integer starting with 0: "
+	throw new CharredException("JSON parse error - integer starting with 0: "
 			    + cb.toString());
       if (nElems == 1) {
 	long retval = Character.digit(cbBuffer[0], 10);
-	if (retval < 0) throw new Exception("JSON parse error - invalid integer: " +
+	if (retval < 0) throw new CharredException("JSON parse error - invalid integer: " +
 					    cb.toString());
 	return retval;
       }
@@ -213,7 +213,7 @@ public final class JSONReader implements AutoCloseable {
 	//If there is a period it must have a number on each side.
 	if (dotIndex == nElems - 1 || !isAsciiDigit(cbBuffer[dotIndex+1]) ||
 	    dotIndex == 0 || !isAsciiDigit(cbBuffer[dotIndex-1]))
-	  throw new Exception("JSON parse error - period must be preceded and followed by a digit: " +
+	  throw new CharredException("JSON parse error - period must be preceded and followed by a digit: " +
 			      strdata);
       }
       return doubleFn.apply(strdata);
@@ -268,11 +268,11 @@ public final class JSONReader implements AutoCloseable {
       final char nextChar = reader.eatwhite();
       if (nextChar == ']') {
 	if (hasNext && !first)
-	  throw new Exception("One too many commas in your list my friend");
+	  throw new CharredException("JSON parse error - One too many commas in your list my friend");
 	return aryReader.finalizeArray(aryObj);
       } else if (nextChar != 0) {
 	if (!hasNext)
-	  throw new Exception("One too few commas in your list my friend");
+	  throw new CharredException("JSON parse error - One too few commas in your list my friend");
 	first = false;
 	reader.unread();
 	aryObj = aryReader.onValue(aryObj, readObject());
@@ -281,7 +281,7 @@ public final class JSONReader implements AutoCloseable {
 	  reader.unread();
       }
     }
-    throw new EOFException("EOF while reading list");
+    throw new EOFException("JSON parse error - EOF while reading list");
   }
 
   // Unused for now, used for JSON5 encoding in which keys may be unquoted
@@ -322,36 +322,36 @@ public final class JSONReader implements AutoCloseable {
       char nextChar = reader.eatwhite();
       if (nextChar == '}') {
 	if (hasNext && !first)
-	  throw new Exception("One too many commas in your map my friend: "
+	  throw new CharredException("JSON parse error - One too many commas in your map my friend: "
 			      + String.valueOf(objReader.finalizeObj(mapObj))
 			      + "context:\n" + context());
 	return objReader.finalizeObj(mapObj);
       } else {
 	first = false;
 	if (!hasNext)
-	  throw new Exception ("One too few commas in your map my friend: "
+	  throw new CharredException ("JSON parse error - One too few commas in your map my friend: "
 			       + String.valueOf(objReader.finalizeObj(mapObj)) +
 			       "context:\n" + context());
 	String keyVal = null;
 	if (nextChar == '"')
 	  keyVal = readString();
 	else
-	  throw new Exception("JSON keys must be quoted strings.");
+	  throw new CharredException("JSON parse error - JSON keys must be quoted strings.");
 
 	nextChar = reader.eatwhite();
 	if (nextChar != ':')
-	  throw new Exception("Map keys must be followed by a ':'");
+	  throw new CharredException("JSON parse error - Map keys must be followed by a ':'");
 	Object valVal = readObject();
 	mapObj = objReader.onKV(mapObj, keyVal, valVal);
 	nextChar = reader.eatwhite();
 	if ( nextChar == 0 )
-	  throw new EOFException("EOF while reading map: " + String.valueOf(objReader.finalizeObj(mapObj)));
+	  throw new EOFException("JSON parse error - EOF while reading map: " + String.valueOf(objReader.finalizeObj(mapObj)));
 	hasNext = nextChar == ',';
 	if (!hasNext)
 	  reader.unread();
       }
     }
-    throw new EOFException("EOF while reading map.");
+    throw new EOFException("JSON parse error - EOF while reading map.");
   }
 
   public final String context() throws Exception {
@@ -371,19 +371,19 @@ public final class JSONReader implements AutoCloseable {
 	final char[] data = tempRead(3);
 	if (data[0] == 'r' && data[1] == 'u' && data[2] == 'e')
 	  return true;
-	throw new Exception("JSON parse error - bad boolean value.");
+	throw new CharredException("JSON parse error - bad boolean value.");
       }
       case 'f': {
 	final char[] data = tempRead(4);
 	if (data[0] == 'a' && data[1] == 'l' && data[2] == 's' && data[3] == 'e')
 	  return false;
-	throw new Exception("JSON parse error - bad boolean value.");
+	throw new CharredException("JSON parse error - bad boolean value.");
       }
       case 'n': {
 	final char[] data = tempRead(3);
 	if (data[0] == 'u' && data[1] == 'l' && data[2] == 'l')
 	  return null;
-	throw new Exception("JSON parse error - unrecognized 'null' entry - " + new String(data) + " - context:\n" + context());
+	throw new CharredException("JSON parse error - unrecognized 'null' entry - " + new String(data) + " - context:\n" + context());
       }
       case '[': return readList();
       case '{': return readMap();
@@ -394,7 +394,7 @@ public final class JSONReader implements AutoCloseable {
 	}
 	//fallthrough intentional
       default:
-	throw new Exception("JSON parse error - Unexpected character - " + val);
+	throw new CharredException("JSON parse error - Unexpected character - " + val);
       }
     }
   }

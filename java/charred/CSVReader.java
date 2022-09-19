@@ -50,7 +50,7 @@ public final class CSVReader {
       sb.append(buffer,startpos,len);
       buffer = reader.nextBuffer();
     }
-    throw new EOFException("EOF encountered within quote - " + sb.toString());
+    throw new EOFException("CSV parse error - EOF encountered within quote - " + sb.toString());
   }
   final void csvReadComment() throws EOFException {
     char[] buffer = reader.buffer();

@@ -25,7 +25,7 @@
             [clojure.set :as set])
   (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
             JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter
-            JSONReader$ArrayReader]
+            JSONReader$ArrayReader CharredException]
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
            [java.lang AutoCloseable]
            [java.util.function Supplier LongPredicate BiConsumer]
@@ -226,8 +226,8 @@
     (string? v)
     (do
       (when-not (== 1 (.length ^String v))
-        (throw (Exception.
-                (format "Only single character separators allowed: - \"%s\""
+        (throw (CharredException.
+                (format "CSV error - Only single character separators allowed: - \"%s\""
                         v))))
       (first v))
     (number? v)
