@@ -1,6 +1,6 @@
 (ns charred.csv-test
   (:require [charred.api :refer [read-csv] :as api]
-            [clojure.test :refer [deftest is]]))
+            [clojure.test :refer [deftest is testing]]))
 
 
 (deftest funky-csv
@@ -191,3 +191,12 @@ air, moon roof, loaded\",4799.00")
 (deftest quote-not-beginning-of-line
   (is (= [["a" "3\""] ["b" "4\""] ["c" "5"]]
          (vec (api/read-csv "a,3\"\nb,4\"\nc,5")))))
+
+
+(deftest quoted-row-wout-return
+  (testing "pass"
+    (is (= [["text"] ["Some string"]]
+           (api/read-csv "text\rSome string"))))
+  (testing "throws"
+    (is (= [["text"] ["Some string"]]
+           (api/read-csv "text\r\"Some string\"")))))

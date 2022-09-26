@@ -42,7 +42,8 @@ public final class CSVReader {
 	    //account for loop increment
 	    pos = startpos - 1;
 	  } else {
-	    reader.unread();
+	    if(!reader.eof())
+	      reader.unread();
 	    return;
 	  }
 	}
