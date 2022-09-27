@@ -1,5 +1,12 @@
 # Charred Changelog
 
+## 1.014
+ * Refactor fix to 11 to simplify unread uses.  Unread on eof now silently fails.
+
+## 1.013
+ * [issue 11](https://github.com/cnuernber/charred/issues/11) - Unread exception at end of valid file.
+ * [issue 9](https://github.com/cnuernber/charred/issues/9) - Identifiable exceptions - charred now throws charred-specific exceptions.
+
 ## 1.012
  * [issue 8](https://github.com/cnuernber/charred/issues/8) - Quote not at beginning of line.
 
