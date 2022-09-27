@@ -42,8 +42,7 @@ public final class CSVReader {
 	    //account for loop increment
 	    pos = startpos - 1;
 	  } else {
-	    if(!reader.eof())
-	      reader.unread();
+	    reader.unread();
 	    return;
 	  }
 	}
@@ -64,7 +63,7 @@ public final class CSVReader {
 	  reader.position(pos + 1);
 	  return;
 	} else if (curChar == '\r') {
-	  if (reader.readFrom(pos+1) != '\n' && !reader.eof()) {
+	  if (reader.readFrom(pos+1) != '\n') {
 	    reader.unread();
 	  }
 	  return;
@@ -104,7 +103,7 @@ public final class CSVReader {
 	  return EOL;
 	} else if (curChar == '\r') {
 	  sb.append(buffer, startpos, pos);
-	  if (reader.readFrom(pos+1) != '\n' && !reader.eof()) {
+	  if (reader.readFrom(pos+1) != '\n') {
 	    reader.unread();
 	  }
 	  return EOL;

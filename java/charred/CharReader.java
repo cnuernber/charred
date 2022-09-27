@@ -119,7 +119,10 @@ public final class CharReader implements AutoCloseable
     //then we need to allocate a new buffer and reset curPos and such.  Will implement
     //if needed.
     if (curPos < 0) {
-      throw new RuntimeException("Unread too far - current buffer empty");
+      if(eof())
+	curPos = 0;
+      else
+	throw new RuntimeException("Unread too far - current buffer empty");
     }
   }
 
