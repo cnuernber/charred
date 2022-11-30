@@ -527,8 +527,8 @@
 (defn read-json
   "Drop in replacement for clojure.data.json/read and clojure.data.json/read-str.  For options
   see [[read-json-supplier]]."
-  [input & args]
-  (with-open [json-fn (read-json-supplier input (into {} (map vec (partition 2 args))))]
+  [input & {:as args}]
+  (with-open [json-fn (read-json-supplier input args)]
     (.get json-fn)))
 
 
