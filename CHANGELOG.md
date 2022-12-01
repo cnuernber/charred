@@ -1,5 +1,9 @@
 # Charred Changelog
 
+## 1.015
+ * [issue 13](https://github.com/cnuernber/charred/issues/13) - make passing args more
+   convenient.
+
 ## 1.014
  * Refactor fix to 11 to simplify unread uses.  Unread on eof now silently fails.
 
