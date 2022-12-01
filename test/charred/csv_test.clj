@@ -200,3 +200,7 @@ air, moon roof, loaded\",4799.00")
   (testing "throws"
     (is (= [["text"] ["Some string"]]
            (api/read-csv "text\r\"Some string\"")))))
+
+
+(deftest forward-slash-quoted-chars
+  (is (= 3 (count (first (read-csv (java.io.File. "test/data/alb.csv")))))))

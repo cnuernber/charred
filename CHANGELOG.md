@@ -1,5 +1,8 @@
 # Charred Changelog
 
+## 1.016
+ * Support for backslash-escaped characters similar to bash-style text processing.
+
 ## 1.015
  * [issue 13](https://github.com/cnuernber/charred/issues/13) - make passing args more
    convenient.

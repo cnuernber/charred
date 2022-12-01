@@ -12,21 +12,24 @@ public final class CSVReader {
   final char quot;
   final char sep;
   final char comment;
+  final char escape;
   public static final int EOF=-1;
   public static final int EOL=-2;
   public static final int SEP=1;
   public static final int QUOT=2;
   public static final int COMMENT=3;
 
-  public CSVReader(CharReader rdr, char _quot, char _sep, char _comment) {
+  public CSVReader(CharReader rdr, char _quot, char _sep, char _comment, char _escape) {
     reader = rdr;
     quot = _quot;
     sep = _sep;
     comment = _comment;
+    escape = _escape;
   }
 
   final void csvReadQuote(CharBuffer sb) throws EOFException {
     char[] buffer = reader.buffer();
+    final char localEscape = escape;
     while(buffer != null) {
       int startpos = reader.position();
       int len = buffer.length;
@@ -45,6 +48,13 @@ public final class CSVReader {
 	    reader.unread();
 	    return;
 	  }
+	} else if (curChar == localEscape) {
+	  sb.append(buffer,startpos,pos);
+	  sb.append((char)reader.readFrom(pos+1));
+	  buffer = reader.buffer();
+	  len = buffer.length;
+	  startpos = reader.position();
+	  pos = startpos;
 	}
       }
       sb.append(buffer,startpos,len);
@@ -79,11 +89,12 @@ public final class CSVReader {
     final char localSep = sep;
     final char localQuot = quot;
     final char localComment = comment;
+    final char localEscape = escape;
     boolean ec = enableComment;
     boolean eq = enableQuote;
     while(buffer != null) {
-      final int startpos = reader.position();
-      final int len = buffer.length;
+      int startpos = reader.position();
+      int len = buffer.length;
       for(int pos = startpos; pos < len; ++pos) {
 	final char curChar = buffer[pos];
 	if (curChar == localComment && ec) {
@@ -97,6 +108,13 @@ public final class CSVReader {
 	  sb.append(buffer, startpos, pos);
 	  reader.position(pos + 1);
 	  return SEP;
+	} else if (curChar == localEscape) {
+	  sb.append(buffer, startpos, pos);
+	  sb.append((char)reader.readFrom(pos+1));
+	  buffer = reader.buffer();
+	  len = buffer.length;
+	  startpos = reader.position();
+	  pos = startpos;
 	} else if (curChar == '\n') {
 	  sb.append(buffer, startpos, pos);
 	  reader.position(pos + 1);
@@ -126,9 +144,10 @@ public final class CSVReader {
     LongPredicate pred;
     final JSONReader.ArrayReader arrayReader;
 
-    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred, char quot, char sep, char comment,
+    public RowReader(CharReader _r, CharBuffer cb, LongPredicate _pred,
+		     char quot, char sep, char comment, char escape,
 		     JSONReader.ArrayReader _aryReader) {
-      rdr = new CSVReader(_r, quot, sep, comment);
+      rdr = new CSVReader(_r, quot, sep, comment, escape);
       sb = cb;
       pred = _pred;
       arrayReader = _aryReader;
