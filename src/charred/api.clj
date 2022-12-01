@@ -354,13 +354,9 @@
   An important note is that `:comment-char` is disabled by default during read-csv
   for backward compatibility while it is not disabled by default during
   read-csv-supplier."
-  [input & options]
-  (let [options (->> (partition 2 options)
-                     (map vec)
-                     (into {}))
-        options (update options :comment-char (fn [data]
-                                                (if data data nil)))]
-    (-> (read-csv-supplier input (merge {:profile :immutable} options))
+  [input & {:as args}]
+  (let [args (update args :comment-char (fn [data] (if data data nil)))]
+    (-> (read-csv-supplier input (merge {:profile :immutable} args))
         (seq))))
 
 
@@ -375,11 +371,8 @@
         case every field is quoted.
      :newline (:lf (default) or :cr+lf)
      :close-writer? - defaults to true.  When true, close writer when finished."
-  ([w data & options]
-   (let [options (if-not (empty? options)
-                   (apply hash-map options)
-                   {})
-         ^String line-end (case (get options :newline :lf)
+  ([w data & {:as options}]
+   (let [^String line-end (case (get options :newline :lf)
                             :lf "\n"
                             :cr "\r"
                             :cr+lf "\r\n")
@@ -650,18 +643,17 @@ Defaults to toString for types that aren't representable in json."))
      `toString`.  This is the most general override mechanism where you will need to manually
      call the JSONWriter's methods.  The simpler but slightly less general pathway is to
      override the protocol method [[->json-data]]."
-  [output data & args]
-  (let [argmap (apply hash-map args)
-        writer-fn (json-writer-fn argmap)]
+  [output data & {:as argmap}]
+  (let [writer-fn (json-writer-fn argmap)]
     (with-open [^JSONWriter writer (writer-fn output)]
       (.writeObject writer data))))
 
 
 (defn write-json-str
   "Write json to a string.  See options for [[write-json]]."
-  [data & args]
+  [data & {:as args}]
   (let [w (StringWriter.)]
-    (apply write-json w data args)
+    (apply write-json w data (apply concat (seq args)))
     (.toString w)))
 
 
