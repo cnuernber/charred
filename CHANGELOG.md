@@ -1,5 +1,8 @@
 # Charred Changelog
 
+## 1.017
+ * Making sure suppliers have a good iterator interface.
+
 ## 1.016
  * Support for backslash-escaped characters similar to bash-style text processing.
 

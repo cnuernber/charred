@@ -26,11 +26,12 @@
   (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
             JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter
             JSONReader$ArrayReader CharredException]
+           [charred.coerce SupplierIterator]
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
            [java.lang AutoCloseable]
            [java.util.function Supplier LongPredicate BiConsumer]
            [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry Set
-            ArrayList]
+            ArrayList Iterator]
            [java.io Reader StringReader Writer StringWriter]
            [clojure.lang MapEntry Keyword Symbol Seqable IReduce]
            [java.sql Date]
@@ -209,6 +210,8 @@
     (set! first-row nil)
     (set! rdr nil)
     @close-fn*)
+  Iterable
+  (iterator [this] (SupplierIterator. this (.get this)))
   Seqable
   (seq [this] (coerce/supplier->seq this))
   IReduce

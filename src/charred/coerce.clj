@@ -1,6 +1,6 @@
 (ns charred.coerce
   "Coercions to specific java types."
-  (:import [java.util Iterator]
+  (:import [java.util Iterator NoSuchElementException]
            [java.util.function Supplier Function BiFunction Consumer Predicate BiConsumer]
            [java.util.stream Stream]
            [clojure.lang IFn]))
@@ -63,6 +63,18 @@
     (ObjectArrayIter. ary-data 0 (alength ^objects ary-data))))
 
 
+(deftype ^:private SupplierIterator [^Supplier s
+                                     ^:unsynchronized-mutable val]
+  Iterator
+  (hasNext [this] (not (nil? val)))
+  (next [this]
+    (let [rv val]
+      (when (nil? rv)
+        (throw (NoSuchElementException.)))
+      (set! val (.get s))
+      rv)))
+
+
 (defn ->iterator
   "Convert a stream or an iterable into an iterator."
   ^Iterator [item]
@@ -78,14 +90,7 @@
     (instance? Stream item)
     (.iterator ^Stream item)
     (instance? Supplier item)
-    (let [^Supplier item item
-          curobj* (volatile! (.get item))]
-      (reify Iterator
-        (hasNext [this] (not (nil? @curobj*)))
-        (next [this]
-          (let [curval @curobj*]
-            (vreset! curobj* (.get item))
-            curval))))
+    (SupplierIterator. item (.get ^Supplier item))
     :else
     (throw (Exception. (failed-coercion-message item "iterator")))))
 
