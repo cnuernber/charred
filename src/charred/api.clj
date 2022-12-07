@@ -255,7 +255,7 @@
      speeds up reading larger files (1MB+) by about 30%.
   * `:separator` - Field separator - defaults to \\,.
   * `:quote` - Quote specifier - defaults to //\".
-  * `:escape` - Escape character - defaults to \\\\.
+  * `:escape` - Escape character - defaults to disabled.
   * `:close-reader?` - Close the reader when iteration is finished - defaults to true.
   * `:column-whitelist` - Sequence of allowed column names or indexes.
   * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
@@ -281,7 +281,7 @@
         comment (->character (if-let [cchar (get options :comment-char \#)]
                                cchar
                                (char 0)))
-        escape (->character (if-let [cchar (get options :escape \\)]
+        escape (->character (if-let [cchar (get options :escape)]
                               cchar
                               (char 0)))
         ^JSONReader$ArrayReader array-iface (case (get options :profile :immutable)

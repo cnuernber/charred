@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.018
+ * Disabled the escape character by default - there are valid csv's that fail when the
+   escape character is '\' - they have newlines in their quoted sections.
 
 ## 1.017
  * Making sure suppliers have a good iterator interface.
