@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.019 
+ * Fixed escaping - there was of course an off-by-one error when restarting after
+   an escaped character.
+ 
 ## 1.018
  * Disabled the escape character by default - there are valid csv's that fail when the
    escape character is '\' - they have newlines in their quoted sections.

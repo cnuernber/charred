@@ -54,7 +54,12 @@ public final class CSVReader {
 	  buffer = reader.buffer();
 	  len = buffer.length;
 	  startpos = reader.position();
-	  pos = startpos;
+	  //Account for loop increment
+	  pos = startpos - 1;
+	  // System.out.println("len " + String.valueOf(len) +
+	  // 		     " startpos " + String.valueOf(startpos) +
+	  // 		     " pos " + String.valueOf(pos) +
+	  // 		     " buffer[pos] " + String.valueOf(buffer[pos]));
 	}
       }
       sb.append(buffer,startpos,len);
@@ -114,7 +119,8 @@ public final class CSVReader {
 	  buffer = reader.buffer();
 	  len = buffer.length;
 	  startpos = reader.position();
-	  pos = startpos;
+	  //Account for loop increment
+	  pos = startpos - 1;
 	} else if (curChar == '\n') {
 	  sb.append(buffer, startpos, pos);
 	  reader.position(pos + 1);

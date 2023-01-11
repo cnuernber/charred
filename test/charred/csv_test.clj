@@ -204,3 +204,6 @@ air, moon roof, loaded\",4799.00")
 
 (deftest forward-slash-quoted-chars
   (is (= 3 (count (first (read-csv (java.io.File. "test/data/alb.csv") :escape \\))))))
+
+(deftest forward-slash-quoted-chars
+  (is (every? #(== 4 (count %)) (read-csv (java.io.File. "test/data/alb2.csv") :escape \\))))

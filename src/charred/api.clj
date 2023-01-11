@@ -376,8 +376,8 @@
      * `:quote?` A predicate function which determines if a string should be quoted.
         Defaults to quoting only when necessary.  May also be the the value 'true' in which
         case every field is quoted.
-     :newline (:lf (default) or :cr+lf)
-     :close-writer? - defaults to true.  When true, close writer when finished."
+     * `:newline` - `:lf` (default) or `:cr+lf`)
+     * `:close-writer?` - defaults to true.  When true, close writer when finished."
   ([w data & {:as options}]
    (let [^String line-end (case (get options :newline :lf)
                             :lf "\n"
