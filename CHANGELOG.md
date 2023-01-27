@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.022
+ * The string canonicalizer was subtly dropping strings resulting in unneeded 
+   allocations.
+ 
 ## 1.021
  * Two optimizations for json parsing.  First, the parsing of lists and maps is inlined into
    main parseObject method.  Second, map keys are canonicalized leading to faster downstream
