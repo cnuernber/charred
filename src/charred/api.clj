@@ -449,8 +449,13 @@
                    (persistent! obj)))
                JSONReader/immutableArrayReader])
             [nil nil]))
-        obj-iface (get options :obj-iface obj-iface-default)
-        array-iface (get options :array-iface array-iface-default)
+        parser-fn (get options :parser-fn
+                       (let [obj-iface (get options :obj-iface obj-iface-default)
+                             array-iface (get options :array-iface array-iface-default)]
+                         (fn []
+                           {:obj-iface obj-iface
+                            :array-iface array-iface
+                            :finalize-fn identity})))
         bigdec-fn (coerce/->function (if (get options :bigdec)
                                        #(BigDecimal. ^String %)
                                        (get options :double-fn)))
@@ -459,10 +464,12 @@
                      #(if eof-error?
                         (throw (java.io.EOFException. "Unexpected end of input"))
                         eof-value)))]
-    #(JSONReader. bigdec-fn
-                  array-iface
-                  obj-iface
-                  eof-fn)))
+    #(let [^Map parse-map (parser-fn)]
+       [(JSONReader. bigdec-fn
+                     (.get parse-map :array-iface)
+                     (.get parse-map :obj-iface)
+                     eof-fn)
+        (.get parse-map :finalize-fn)])))
 
 
 
@@ -516,7 +523,7 @@
   * `:eof-fn` - Function called if readObject is going to return EOF.  Defaults to throwing an
      EOFException."
   ^CloseableSupplier [input & [options]]
-  (let [^JSONReader json-rdr ((json-reader-fn options))
+  (let [[^JSONReader json-rdr finalize-fn] ((json-reader-fn options))
         close-fn* (delay (.close json-rdr))
         ;;default async? to false as most json files are small
         options (assoc options :async? (get options :async? false))]
@@ -543,10 +550,10 @@
         ;;default async to false
         options (assoc options :async? (get options :async? false))]
     (fn [input]
-      (let [^JSONReader json-rdr (json-rdr-fn)]
+      (let [[^JSONReader json-rdr finalize-fn] (json-rdr-fn)]
         (with-open [rdr (reader->char-reader input options)]
           (.beginParse json-rdr rdr)
-          (.readObject json-rdr))))))
+          (finalize-fn (.readObject json-rdr)))))))
 
 
 (defprotocol PToJSON

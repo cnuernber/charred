@@ -260,30 +260,6 @@ public final class JSONReader implements AutoCloseable {
     return finalizeNumber(cb, integer, firstChar, dotIndex);
   }
 
-  final Object readList() throws Exception {
-    boolean hasNext = true;
-    boolean first = true;
-    Object aryObj = aryReader.newArray();
-    while (!reader.eof()) {
-      final char nextChar = reader.eatwhite();
-      if (nextChar == ']') {
-	if (hasNext && !first)
-	  throw new CharredException("JSON parse error - One too many commas in your list my friend");
-	return aryReader.finalizeArray(aryObj);
-      } else if (nextChar != 0) {
-	if (!hasNext)
-	  throw new CharredException("JSON parse error - One too few commas in your list my friend");
-	first = false;
-	reader.unread();
-	aryObj = aryReader.onValue(aryObj, readObject());
-	hasNext = reader.eatwhite() == ',';
-	if (!hasNext)
-	  reader.unread();
-      }
-    }
-    throw new EOFException("JSON parse error - EOF while reading list");
-  }
-
   // Unused for now, used for JSON5 encoding in which keys may be unquoted
   /* final String readKey(final char firstChar) throws Exception { */
   /*   final CharBuffer cb = charBuffer; */
@@ -312,47 +288,6 @@ public final class JSONReader implements AutoCloseable {
   /*   } */
   /*   throw new EOFException("EOF while reading a string."); */
   /* } */
-
-  final Object readMap() throws Exception {
-    boolean hasNext = true;
-    boolean first = true;
-    //By the json specification, keys must be strings.
-    Object mapObj = objReader.newObj();
-    while(!reader.eof()) {
-      char nextChar = reader.eatwhite();
-      if (nextChar == '}') {
-	if (hasNext && !first)
-	  throw new CharredException("JSON parse error - One too many commas in your map my friend: "
-			      + String.valueOf(objReader.finalizeObj(mapObj))
-			      + "context:\n" + context());
-	return objReader.finalizeObj(mapObj);
-      } else {
-	first = false;
-	if (!hasNext)
-	  throw new CharredException ("JSON parse error - One too few commas in your map my friend: "
-			       + String.valueOf(objReader.finalizeObj(mapObj)) +
-			       "context:\n" + context());
-	String keyVal = null;
-	if (nextChar == '"')
-	  keyVal = readString();
-	else
-	  throw new CharredException("JSON parse error - JSON keys must be quoted strings.");
-
-	nextChar = reader.eatwhite();
-	if (nextChar != ':')
-	  throw new CharredException("JSON parse error - Map keys must be followed by a ':'");
-	Object valVal = readObject();
-	mapObj = objReader.onKV(mapObj, keyVal, valVal);
-	nextChar = reader.eatwhite();
-	if ( nextChar == 0 )
-	  throw new EOFException("JSON parse error - EOF while reading map: " + String.valueOf(objReader.finalizeObj(mapObj)));
-	hasNext = nextChar == ',';
-	if (!hasNext)
-	  reader.unread();
-      }
-    }
-    throw new EOFException("JSON parse error - EOF while reading map.");
-  }
 
   public final String context() throws Exception {
     return reader.context(200);
@@ -385,8 +320,69 @@ public final class JSONReader implements AutoCloseable {
 	  return null;
 	throw new CharredException("JSON parse error - unrecognized 'null' entry - " + new String(data) + " - context:\n" + context());
       }
-      case '[': return readList();
-      case '{': return readMap();
+      case '[':  {
+	boolean hasNext = true;
+	boolean first = true;
+	Object aryObj = aryReader.newArray();
+	while (!reader.eof()) {
+	  final char nextChar = reader.eatwhite();
+	  if (nextChar == ']') {
+	    if (hasNext && !first)
+	      throw new CharredException("JSON parse error - One too many commas in your list my friend");
+	    return aryReader.finalizeArray(aryObj);
+	  } else if (nextChar != 0) {
+	    if (!hasNext)
+	      throw new CharredException("JSON parse error - One too few commas in your list my friend");
+	    first = false;
+	    reader.unread();
+	    aryObj = aryReader.onValue(aryObj, readObject());
+	    hasNext = reader.eatwhite() == ',';
+	    if (!hasNext)
+	      reader.unread();
+	  }
+	}
+	throw new EOFException("JSON parse error - EOF while reading list");
+      }
+      case '{': {
+	boolean hasNext = true;
+	boolean first = true;
+	//By the json specification, keys must be strings.
+	Object mapObj = objReader.newObj();
+	while(!reader.eof()) {
+	  char nextChar = reader.eatwhite();
+	  if (nextChar == '}') {
+	    if (hasNext && !first)
+	      throw new CharredException("JSON parse error - One too many commas in your map my friend: "
+					 + String.valueOf(objReader.finalizeObj(mapObj))
+					 + "context:\n" + context());
+	    return objReader.finalizeObj(mapObj);
+	  } else {
+	    first = false;
+	    if (!hasNext)
+	      throw new CharredException ("JSON parse error - One too few commas in your map my friend: "
+					  + String.valueOf(objReader.finalizeObj(mapObj)) +
+					  "context:\n" + context());
+	    String keyVal = null;
+	    if (nextChar == '"')
+	      keyVal = readString();
+	    else
+	      throw new CharredException("JSON parse error - JSON keys must be quoted strings.");
+
+	    nextChar = reader.eatwhite();
+	    if (nextChar != ':')
+	      throw new CharredException("JSON parse error - Map keys must be followed by a ':'");
+	    Object valVal = readObject();
+	    mapObj = objReader.onKV(mapObj, keyVal, valVal);
+	    nextChar = reader.eatwhite();
+	    if ( nextChar == 0 )
+	      throw new EOFException("JSON parse error - EOF while reading map: " + String.valueOf(objReader.finalizeObj(mapObj)));
+	    hasNext = nextChar == ',';
+	    if (!hasNext)
+	      reader.unread();
+	  }
+	}
+	throw new EOFException("JSON parse error - EOF while reading map.");
+      }
       case 0:
 	if (reader.eof()) {
 	  close();
