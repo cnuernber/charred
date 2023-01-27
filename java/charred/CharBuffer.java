@@ -78,7 +78,17 @@ public final class CharBuffer implements CharSequence
     retval.append(buffer, start, end);
     return retval;
   }
-  public final String toString() {
+  public final String toString(char[] buffer, int sidx, int eidx, CanonicalStrings cv) {
+    if(len == 0) {
+      return cv != null ? cv.put(buffer, sidx, eidx)
+	: new String(buffer, sidx, eidx - sidx);
+    } else {
+      append(buffer, sidx, eidx);
+      return toString(cv);
+    }
+  }
+  public final String toString() { return toString(null); }
+  public final String toString(CanonicalStrings cv) {
     int strlen = len;
     int startoff = 0;
     if(trimLeading && strlen != 0) {
@@ -96,7 +106,8 @@ public final class CharBuffer implements CharSequence
       }
       return "";
     } else {
-      return new String(buffer, startoff, strlen);
+      return cv != null ? cv.put(buffer, startoff, startoff + strlen)
+	: new String(buffer, startoff, strlen);
     }
   }
 }

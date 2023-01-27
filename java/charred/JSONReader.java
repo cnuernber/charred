@@ -89,6 +89,7 @@ public final class JSONReader implements AutoCloseable {
   public final Supplier<Object> eofFn;
   public final ObjReader objReader;
   public final ArrayReader aryReader;
+  public final CanonicalStrings keyBuffer;
   //We only need one temp buffer for various string building activities
   final CharBuffer charBuffer = new CharBuffer();
   //A temp buffer for reading out fixed sequences of characters
@@ -107,6 +108,7 @@ public final class JSONReader implements AutoCloseable {
     aryReader = _aryReader != null ? _aryReader : immutableArrayReader;
     objReader = _objReader != null ? _objReader : immutableObjReader;
     eofFn = orDefault(_eofFn, defaultEOFFn);
+    keyBuffer = new CanonicalStrings();
   }
 
   public static boolean numberChar(char v) {
@@ -128,8 +130,10 @@ public final class JSONReader implements AutoCloseable {
     cb.clear();
     return cb;
   }
-
   final String readString() throws Exception {
+    return readString(null);
+  }
+  final String readString(CanonicalStrings cv) throws Exception {
     final CharBuffer cb = getCharBuffer();
     char[] buffer = reader.buffer();
     while(buffer != null) {
@@ -138,9 +142,9 @@ public final class JSONReader implements AutoCloseable {
       for(int pos = startpos; pos < len; ++pos) {
 	final char curChar = buffer[pos];
 	if (curChar == '"') {
-	  cb.append(buffer,startpos,pos);
+	  final String rv = cb.toString(buffer,startpos,pos,cv);
 	  reader.position(pos + 1);
-	  return cb.toString();
+	  return rv;
 	} else if (curChar == '\\') {
 	  cb.append(buffer,startpos,pos);
 	  final int idata = reader.readFrom(pos+1);
@@ -363,8 +367,11 @@ public final class JSONReader implements AutoCloseable {
 					  + String.valueOf(objReader.finalizeObj(mapObj)) +
 					  "context:\n" + context());
 	    String keyVal = null;
+	    //We canonicalize the map keys as this results in both less memory and faster
+	    //downstream operations as the strings themselves will be unique and thus
+	    //hashcodes will be cached.
 	    if (nextChar == '"')
-	      keyVal = readString();
+	      keyVal = readString(keyBuffer);
 	    else
 	      throw new CharredException("JSON parse error - JSON keys must be quoted strings.");
 

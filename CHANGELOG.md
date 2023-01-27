@@ -1,8 +1,15 @@
 # Charred Changelog
-## 1.019 
+## 1.021
+ * Two optimizations for json parsing.  First, the parsing of lists and maps is inlined into
+   main parseObject method.  Second, map keys are canonicalized leading to faster downstream
+   processing especially for row-oriented datasets as java strings cache their hash codes.
+   This also eliminated a potentially superfluous buffer copy in the case where the string
+   data was described completely in the current parse buffer.
+
+## 1.019
  * Fixed escaping - there was of course an off-by-one error when restarting after
    an escaped character.
- 
+
 ## 1.018
  * Disabled the escape character by default - there are valid csv's that fail when the
    escape character is '\' - they have newlines in their quoted sections.
