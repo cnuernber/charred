@@ -101,10 +101,9 @@ public class CanonicalStrings {
     final int len = eidx - sidx;
     int hc = hashCode(data, sidx, len);
     final int idx = hc & this.mask;
-    LeafNode lastNode = null;
+    LeafNode lastNode = this.data[idx];
     //Avoid unneeded calls to both equals and checkResize
-    for(LeafNode e = this.data[idx]; e != null; e = e.nextNode) {
-      lastNode = e;
+    for(LeafNode e = lastNode; e != null; e = e.nextNode) {
       if(equals(data, sidx, len, e.k))
 	return e.k;
     }
