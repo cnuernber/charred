@@ -1,14 +1,22 @@
 # Charred Changelog
 
+## 1.025
+ * Backed out 024 optimizations.  This release is same as 1.023 - its about as good
+   as we can get it.
+
+## 1.024
+ * JSON parser is again slightly optimized for jdk 17+.  This leads to equal or better timings
+   across the json test suite in the cnuernber/fast-json.
+
 ## 1.023
  * Better docs and the ability to share the json string canonicalizer between parser
    invocations.
  * Faster small-json parsing.
- 
+
 ## 1.022
- * The string canonicalizer was subtly dropping strings resulting in unneeded 
+ * The string canonicalizer was subtly dropping strings resulting in unneeded
    allocations.
- 
+
 ## 1.021
  * Two optimizations for json parsing.  First, the parsing of lists and maps is inlined into
    main parseObject method.  Second, map keys are canonicalized leading to faster downstream
