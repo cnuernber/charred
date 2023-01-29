@@ -418,6 +418,8 @@
          (when close-writer?
            (.close w)))))))
 
+(defrecord JSONParseRecord [array-iface obj-iface finalize-fn string-canonicalizer])
+
 
 (defn json-reader-fn
   "Given options, return a function that when called constructs a json reader from
@@ -453,9 +455,7 @@
                        (let [obj-iface (get options :obj-iface obj-iface-default)
                              array-iface (get options :array-iface array-iface-default)]
                          (fn []
-                           {:obj-iface obj-iface
-                            :array-iface array-iface
-                            :finalize-fn identity})))
+                           (JSONParseRecord. array-iface obj-iface identity nil))))
         bigdec-fn (coerce/->function (if (get options :bigdec)
                                        #(BigDecimal. ^String %)
                                        (get options :double-fn)))
@@ -464,12 +464,24 @@
                      #(if eof-error?
                         (throw (java.io.EOFException. "Unexpected end of input"))
                         eof-value)))]
-    #(let [^Map parse-map (parser-fn)]
-       [(JSONReader. bigdec-fn
-                     (.get parse-map :array-iface)
-                     (.get parse-map :obj-iface)
-                     eof-fn)
-        (.get parse-map :finalize-fn)])))
+    (if-let [pfn (get options :parser-fn)]
+      #(let [^Map parse-map (parser-fn)]
+         [(JSONReader. bigdec-fn
+                       (.get parse-map :array-iface)
+                       (.get parse-map :obj-iface)
+                       eof-fn
+                       ;;You can share the string canonicalizer between parser invocations.
+                       (.get parse-map :canonical-strings))
+          (.get parse-map :finalize-fn)])
+      (let [obj-iface (get options :obj-iface obj-iface-default)
+            array-iface (get options :array-iface array-iface-default)
+            sc (charred.CanonicalStrings.)]
+        #(vector (JSONReader. bigdec-fn
+                              array-iface
+                              obj-iface
+                              eof-fn
+                              sc)
+                 identity)))))
 
 
 
@@ -499,6 +511,11 @@
   in the 10-100K range where async loading doesn't make much of a difference.  On a larger
   file, however, setting `:async?` to true definitely can make a large difference.
 
+  Map keys are canonicalized using an instance of charred.StringCanonicalizer.  This results
+  in less memory usage and faster performance as java strings cache their hash codes.  You can
+  supply the string canonicalizer potentially pre-initialized with the `parser-fn` option.
+  For an example of using the `parser-fn` option see [fjson.clj](https://github.com/cnuernber/fast-json/blob/master/src/fjson.clj#L100).
+
   Options:
 
   In addition to the options below, see options for [[reader->char-reader]].
@@ -521,7 +538,13 @@
      object throw an EOF error.  Else returns a special EOF value.
   * `:eof-value` - EOF value.  Defaults to
   * `:eof-fn` - Function called if readObject is going to return EOF.  Defaults to throwing an
-     EOFException."
+     EOFException.
+  * `:parser-fn` - Function that overrides the array-iface and obj-iface parameters - this is
+    called each time the parser is created and must return a map with at least array-iface,
+    obj-iface and finalize-fn keys.  It may also optionally have a `:string-canonicalizer` key
+    which, if present, must be an instance of charred.StringCanonicalizer.  Thus you can
+    ensure the share string tables between parser invocations or create a context-dependent
+    set of array and object interface specifications."
   ^CloseableSupplier [input & [options]]
   (let [[^JSONReader json-rdr finalize-fn] ((json-reader-fn options))
         close-fn* (delay (.close json-rdr))

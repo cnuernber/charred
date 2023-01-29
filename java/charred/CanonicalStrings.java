@@ -3,7 +3,6 @@ package charred;
 
 
 public class CanonicalStrings {
-  //Taken from openjdk ArraysSupport
   final float loadFactor = 0.75f;
   LeafNode[] data;
   int mask;
@@ -14,16 +13,16 @@ public class CanonicalStrings {
     public final String k;
     public final int hashcode;
     LeafNode nextNode;
-    public LeafNode(String k, int hc, LeafNode nn) {
+    public LeafNode(final String k, final int hc, final LeafNode nn) {
       this.k = k;
       this.hashcode = hc;
       this.nextNode = nn;
     }
   };
 
-  public static int hashCode(char[] a, int fromIndex, int length) {
+  //Taken from openjdk ArraysSupport class
+  public static int hashCode(final char[] a, final int fromIndex, final int end) {
     int result = 1;
-    int end = fromIndex + length;
     for (int i = fromIndex; i < end; i++) {
       result = 31 * result + a[i];
     }
@@ -90,18 +89,18 @@ public class CanonicalStrings {
     }
     return rv;
   }
-  boolean equals(char[] data, final int sidx, final int len, String v) {
+  boolean equals(final char[] data, final int sidx, final int len, final String v) {
     if(v.length() != len) return false;
     for(int idx = 0; idx < len; ++idx) {
       if(v.charAt(idx) != data[idx+sidx]) return false;
     }
     return true;
   }
-  public String put(char[] data, int sidx, int eidx) {
+  public String put(final char[] data, final int sidx, final int eidx) {
     final int len = eidx - sidx;
-    int hc = hashCode(data, sidx, len);
+    final int hc = hashCode(data, sidx, eidx);
     final int idx = hc & this.mask;
-    LeafNode lastNode = this.data[idx];
+    final LeafNode lastNode = this.data[idx];
     //Avoid unneeded calls to both equals and checkResize
     for(LeafNode e = lastNode; e != null; e = e.nextNode) {
       if(equals(data, sidx, len, e.k))

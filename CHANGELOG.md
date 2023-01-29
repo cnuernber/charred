@@ -1,4 +1,10 @@
 # Charred Changelog
+
+## 1.023
+ * Better docs and the ability to share the json string canonicalizer between parser
+   invocations.
+ * Faster small-json parsing.
+ 
 ## 1.022
  * The string canonicalizer was subtly dropping strings resulting in unneeded 
    allocations.
