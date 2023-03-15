@@ -78,7 +78,7 @@ public final class CharBuffer implements CharSequence
     retval.append(buffer, start, end);
     return retval;
   }
-  public final String toString(char[] buffer, int sidx, int eidx, CanonicalStrings cv) {
+  public final Object toString(char[] buffer, int sidx, int eidx, ICanonicalObjs cv) {
     if(len == 0) {
       return cv != null ? cv.put(buffer, sidx, eidx)
 	: new String(buffer, sidx, eidx - sidx);
@@ -87,8 +87,8 @@ public final class CharBuffer implements CharSequence
       return toString(cv);
     }
   }
-  public final String toString() { return toString(null); }
-  public final String toString(CanonicalStrings cv) {
+  public final String toString() { return (String)toString(null); }
+  public final Object toString(ICanonicalObjs cv) {
     int strlen = len;
     int startoff = 0;
     if(trimLeading && strlen != 0) {

@@ -2,7 +2,7 @@ package charred;
 
 
 
-public class CanonicalStrings {
+public class CanonicalStrings implements ICanonicalObjs {
   final float loadFactor = 0.75f;
   LeafNode[] data;
   int mask;
