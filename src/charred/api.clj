@@ -437,7 +437,9 @@
           [JSONReader/rawObjReader JSONReader/mutableArrayReader]
           :immutable
           (if (or key-fn val-fn)
-            (let [key-fn (or key-fn identity)
+            (let [key-fn (if (= key-fn keyword)
+                           identity
+                           (or key-fn identity))
                   val-fn (or val-fn (fn val-identity [k v] v))]
               [(reify JSONReader$ObjReader
                  (newObj [this] (transient {}))
@@ -475,7 +477,9 @@
           (.get parse-map :finalize-fn)])
       (let [obj-iface (get options :obj-iface obj-iface-default)
             array-iface (get options :array-iface array-iface-default)
-            sc (charred.CanonicalStrings.)]
+            sc (if (= key-fn keyword)
+                 (charred.CanonicalKeywords.)
+                 (charred.CanonicalStrings.))]
         #(vector (JSONReader. bigdec-fn
                               array-iface
                               obj-iface

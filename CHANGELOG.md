@@ -1,5 +1,10 @@
 # Charred Changelog
-
+## 1.026
+ * Fast path for producing immutable datastructures with keyword keys.  If we go directly from the
+   char buffer to the keyword, when possible, then we save about 25% of the time as we do not construct
+   the intermediate string.  This is true whether you use ham-fisted's high performance hash maps or
+   if you use clojure's immutable datastructures.
+ 
 ## 1.025
  * Backed out 024 optimizations.  This release is same as 1.023 - its about as good
    as we can get it.
