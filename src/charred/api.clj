@@ -674,8 +674,8 @@ Defaults to toString for types that aren't representable in json."))
        false. (These two characters are valid in pure JSON but are not
        valid in JavaScript strings.
   * `:escape-slash` If true (default) the slash / is escaped as \\/
-  * `:indent-str` Defaults to \"  \".  When nil json is printed raw with no indent or
-     whitespace.
+  * `:indent-str` When nil (default) json is printed raw with no indent or whitespace. For
+      two spaces of indent per level of nesting, choose \"  \".
   * `:obj-fn` - Function called on each non-primitive object - it is passed the JSONWriter and
      the object.  The default iterates maps, lists, and arrays converting anything that is
      not a json primitive or a map, list or array to a json primitive via str.  java.sql.Date
