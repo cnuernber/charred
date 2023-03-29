@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.027
+ * Doc fix for json write api.
+ * When writing json, any sequential thing will be interpreted as a json array.
+ 
 ## 1.026
  * Fast path for producing immutable datastructures with keyword keys.  If we go directly from the
    char buffer to the keyword, when possible, then we save about 25% of the time as we do not construct
