@@ -634,7 +634,8 @@ Defaults to toString for types that aren't representable in json."))
       (let [^JSONWriter w w]
         (let [value (when-not (nil? value) (->json-data value))]
           (cond
-            (or (instance? List value)
+            (or (sequential? value)
+                (instance? List value)
                 (.isArray (.getClass ^Object value)))
             (.writeArray w (coerce/->iterator value))
             (instance? Map value)
