@@ -239,3 +239,12 @@
 (deftest serialize-sets
   (is (= "{\"id\":\"15\",\"vals\":[{\"id\":\"492\",\"views\":59},{\"id\":\"44\",\"views\":4}]}"
          (charred/write-json-str {:id "15" :vals #{{:id "44" :views 4} {:id "492" :views 59}}}))))
+
+(deftest serialize-sql-date
+  (is (= "\"1955-07-11T23:00:00Z\""
+         (charred/write-json-str (java.sql.Date. 55 6 12)))))
+
+(deftest serialize-instant
+  (is (= "\"2020-08-30T22:00:00Z\""
+         (charred/write-json-str #inst "2020-08-30T22:00:00.000-00:00")
+         (charred/write-json-str (java.util.Date. 1598824800000)))))
