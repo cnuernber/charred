@@ -65,6 +65,29 @@ scripts/compile
 Tests can be run with `scripts/run-tests` which will compile the java and then run the tests.
 
 
+## Lies, Damn Lies, and Benchmarks!
+
+See the [fast-json project](https://github.com/cnuernber/fast-json/blob/master/src/fjson.clj#L247).  These times are for 
+parsing a 100k json document using keywords for map keys - `:key-fn keyword`.
+
+#### Intel JDK-19
+
+| method       | performance   |
+| ---          | ---:          |
+| jsonista     | 531.239536 µs |
+| charred      | 454.185163 µs |
+| charred-hamf | 351.559837 µs |
+
+
+#### Mac m-1 JDK-19
+
+| method       | performance   |
+| ---          | ---:          |
+| jsonista     | 305.331 µs    |
+| charred      | 271.501 µs    |
+| charred-hamf | 210.597 µs    |
+
+
 ## License
 
 MIT license.
