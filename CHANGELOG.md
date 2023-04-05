@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.028
+ * Fix for [issue 17](https://github.com/cnuernber/charred/issues/17) - make serialization of various datetime types
+   consistent with other libraries.
+   
 ## 1.027
  * Doc fix for json write api.
  * When writing json, any sequential thing will be interpreted as a json array.

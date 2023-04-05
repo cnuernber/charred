@@ -241,8 +241,8 @@
          (charred/write-json-str {:id "15" :vals #{{:id "44" :views 4} {:id "492" :views 59}}}))))
 
 (deftest serialize-sql-date
-  (is (= "\"1955-07-11T23:00:00Z\""
-         (charred/write-json-str (java.sql.Date. 55 6 12)))))
+  (is (= "\"2020-08-30T22:00:00Z\""
+         (charred/write-json-str (java.sql.Date. 1598824800000)))))
 
 (deftest serialize-instant
   (is (= "\"2020-08-30T22:00:00Z\""
