@@ -81,11 +81,12 @@ parsing a 100k json document using keywords for map keys - `:key-fn keyword`.
 
 #### Mac m-1 JDK-19
 
-| method       | performance   |
-| ---          | ---:          |
-| jsonista     | 305.331 µs    |
-| charred      | 271.501 µs    |
-| charred-hamf | 210.597 µs    |
+|        method | performance µs |
+|---------------|---------------:|
+|     data.json |           3164 |
+|      jsonista |            285 |
+|       charred |            249 |
+|  charred-hamf |            227 |
 
 
 ## License
