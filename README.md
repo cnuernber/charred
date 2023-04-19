@@ -70,13 +70,23 @@ Tests can be run with `scripts/run-tests` which will compile the java and then r
 See the [fast-json project](https://github.com/cnuernber/fast-json/blob/master/src/fjson.clj#L247).  These times are for 
 parsing a 100k json document using keywords for map keys - `:key-fn keyword`.
 
+#### Intel JDK-8
+
+|       method | performance µs |
+|--------------|---------------:|
+|    data.json |           4275 |
+|     jsonista |            754 |
+|      charred |            638 |
+| charred-hamf |            486 |
+
 #### Intel JDK-19
 
-| method       | performance   |
-| ---          | ---:          |
-| jsonista     | 531.239536 µs |
-| charred      | 454.185163 µs |
-| charred-hamf | 351.559837 µs |
+|       method | performance µs |
+|--------------|---------------:|
+|    data.json |           5608 |
+|     jsonista |            856 |
+|      charred |            673 |
+| charred-hamf |            531 |
 
 
 #### Mac m-1 JDK-19
