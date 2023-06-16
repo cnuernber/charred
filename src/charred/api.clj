@@ -533,7 +533,7 @@
      JSONReader$JSONObj type with a public data member that is an ArrayList for objects.
   * `:key-fn` - Function called on each string map key.
   * `:value-fn` - Function called on each map value.  Function is passed the key and val so it
-     takes 2 arguments.  If this function returns `:tech.v3.datatype.char-input/elided` then
+     takes 2 arguments.  If this function returns `:charred.api/elided` then
      the key-val pair will be elided from the result.
   * `:array-iface` - Implementation of JSONReader$ArrayReader called on the object array of values for a javascript array.
   * `:obj-iface` - Implementation of JSONReader$ObjReader called for each javascript
