@@ -145,7 +145,8 @@
         n-buffers (long (get options :n-buffers -1))
         bufsize (long (get options :bufsize (* 64 1024)))
         src-fn (if (> n-buffers 0)
-                 (let [buffers (object-array (repeatedly n-buffers #(char-array bufsize)))]
+                 (let [buffers (object-array n-buffers)]
+                   (dotimes [idx n-buffers] (aset buffers idx (char-array bufsize)))
                    (RotatingCharBufFn.  rdr 0 buffers (get options :close-reader? true)))
                  (AllocCharBufFn. rdr bufsize (get options :close-reader? true)))]
     (if async?
@@ -360,10 +361,11 @@
 
   An important note is that `:comment-char` is disabled by default during read-csv
   for backward compatibility while it is not disabled by default during
-  read-csv-supplier."
+  read-csv-supplier.  Also `:close-reader?` defaults to false to match the behavior
+  of data.csv."
   [input & {:as args}]
   (let [args (update args :comment-char (fn [data] (if data data nil)))]
-    (-> (read-csv-supplier input (merge {:profile :immutable} args))
+    (-> (read-csv-supplier input (merge {:profile :immutable :close-reader? false} args))
         (seq))))
 
 
@@ -399,21 +401,21 @@
          sep (unchecked-int sep)
          w (io/writer w)]
      (try
-       (coerce/doiter
-        row data
-        (let [first?* (volatile! true)]
-          (coerce/doiter
-           field row
-           (let [field (str field)]
-             (if-not @first?*
-               (.write w sep)
-               (vreset! first?* false))
-             (if (.test quote-pred field)
-               (do
-                 (CSVWriter/quote field quote cb)
-                 (.write w (.buffer cb) 0 (.length cb)))
-               (.write w field)))))
-        (.write w line-end))
+       (reduce (fn [_ row]
+                 (reduce (fn [first? field]
+                           (let [field (str field)]
+                             (when-not first? (.write w sep))
+                             (if (.test quote-pred field)
+                               (do
+                                 (CSVWriter/quote field quote cb)
+                                 (.write w (.buffer cb) 0 (.length cb)))
+                               (.write w field))
+                             false))
+                         true
+                         row)
+                 (.write w line-end))
+               true
+               data)
        (finally
          (when close-writer?
            (.close w)))))))

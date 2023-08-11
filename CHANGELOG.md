@@ -1,18 +1,24 @@
 # Charred Changelog
+
+## 1.029
+ * read-csv will no longer auto-close the reader unless :close-reader? true is explicitly provided.
+ * bulk namespace for methods of dealing with large numbers of inputs.  Initial operation is
+   concatenate-csv.
+
 ## 1.028
  * Fix for [issue 17](https://github.com/cnuernber/charred/issues/17) - make serialization of various datetime types
    consistent with other libraries.
-   
+
 ## 1.027
  * Doc fix for json write api.
  * When writing json, any sequential thing will be interpreted as a json array.
- 
+
 ## 1.026
  * Fast path for producing immutable datastructures with keyword keys.  If we go directly from the
    char buffer to the keyword, when possible, then we save about 25% of the time as we do not construct
    the intermediate string.  This is true whether you use ham-fisted's high performance hash maps or
    if you use clojure's immutable datastructures.
- 
+
 ## 1.025
  * Backed out 024 optimizations.  This release is same as 1.023 - its about as good
    as we can get it.

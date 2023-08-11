@@ -248,3 +248,17 @@
   (is (= "\"2020-08-30T22:00:00Z\""
          (charred/write-json-str #inst "2020-08-30T22:00:00.000-00:00")
          (charred/write-json-str (java.util.Date. 1598824800000)))))
+
+(defn reader->str
+  [^java.io.Reader rdr]
+  (let [data (char-array 1024)
+        n-read (.read rdr data 0 1024)]
+    (String. data 0 n-read)))
+
+(deftest json-multiple-read
+  (let [src-data "{\"a\":1,\"b\":2.3,\"c\":\"c1\"}"
+        json-data (str src-data src-data)
+        jdata (charred/read-json-supplier (java.io.StringReader. json-data) {:key-fn keyword})]
+    (is (= {:a 1 :b 2.3 :c "c1"} (.get jdata)))
+    (is (= {:a 1 :b 2.3 :c "c1"} (.get jdata)))
+    (is (thrown? java.io.EOFException (.get jdata)))))

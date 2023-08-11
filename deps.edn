@@ -20,7 +20,7 @@
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
                ;;Change this also in build.clj
-               :version "1.028"
+               :version "1.029"
                :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}
@@ -38,7 +38,8 @@
                :source-uri "https://github.com/cnuernber/charred/blob/master/{filepath}#L{line}"
                :namespaces [charred.api
                             charred.coerce
-                            charred.parallel]}}
+                            charred.parallel
+                            charred.bulk]}}
   :deploy
   {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
    :exec-fn deps-deploy.deps-deploy/deploy
