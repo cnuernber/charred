@@ -369,18 +369,11 @@
         (seq))))
 
 
-(defn write-csv
-  "Writes data to writer in CSV-format.
-   Options:
-
-     * `:separator` - Default \\,)
-     * `:quote` - Default \\\")
-     * `:quote?` A predicate function which determines if a string should be quoted.
-        Defaults to quoting only when necessary.  May also be the the value 'true' in which
-        case every field is quoted.
-     * `:newline` - `:lf` (default) or `:cr+lf`)
-     * `:close-writer?` - defaults to true.  When true, close writer when finished."
-  ([w data & {:as options}]
+(defn write-csv-rf
+  "Returns a transduce-compatible rf that will write a csv.
+  See options for [[write-csv]]."
+  ([w] (write-csv-rf w nil))
+  ([w options]
    (let [^String line-end (case (get options :newline :lf)
                             :lf "\n"
                             :cr "\r"
@@ -400,25 +393,40 @@
          cb (CharBuffer.)
          sep (unchecked-int sep)
          w (io/writer w)]
-     (try
-       (reduce (fn [_ row]
-                 (reduce (fn [first? field]
-                           (let [field (str field)]
-                             (when-not first? (.write w sep))
-                             (if (.test quote-pred field)
-                               (do
-                                 (CSVWriter/quote field quote cb)
-                                 (.write w (.buffer cb) 0 (.length cb)))
-                               (.write w field))
-                             false))
-                         true
-                         row)
-                 (.write w line-end))
-               true
-               data)
-       (finally
-         (when close-writer?
-           (.close w)))))))
+     (fn
+       ([] (io/writer w))
+       ([w] (when close-writer?
+              (.close ^Writer w)))
+       ([^Writer w row]
+        (reduce (fn [first? field]
+                  (let [field (str field)]
+                    (when-not first? (.write w sep))
+                    (if (.test quote-pred field)
+                      (do
+                        (CSVWriter/quote field quote cb)
+                        (.write w (.buffer cb) 0 (.length cb)))
+                      (.write w field))
+                    false))
+                true
+                row)
+        (.write w line-end))))))
+
+
+(defn write-csv
+  "Writes data to writer in CSV-format.
+   Options:
+
+     * `:separator` - Default \\,)
+     * `:quote` - Default \\\")
+     * `:quote?` A predicate function which determines if a string should be quoted.
+        Defaults to quoting only when necessary.  May also be the the value 'true' in which
+        case every field is quoted.
+     * `:newline` - `:lf` (default) or `:cr+lf`)
+     * `:close-writer?` - defaults to true.  When true, close writer when finished."
+  ([w data & {:as options}]
+   (let [write-rf (write-csv-rf w options)]
+     (-> (reduce write-rf (write-rf) data)
+         (write-rf)))))
 
 (defrecord JSONParseRecord [array-iface obj-iface finalize-fn string-canonicalizer])
 
