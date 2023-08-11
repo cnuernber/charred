@@ -28,6 +28,7 @@
             JSONReader$ArrayReader CharredException]
            [charred.coerce SupplierIterator]
            [java.util.concurrent ArrayBlockingQueue Executors ExecutorService ThreadFactory]
+           [java.util.concurrent.atomic AtomicLong]
            [java.lang AutoCloseable]
            [java.util.function Supplier LongPredicate BiConsumer]
            [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry Set
@@ -368,10 +369,26 @@
     (-> (read-csv-supplier input (merge {:profile :immutable :close-reader? false} args))
         (seq))))
 
+(deftype ^:private WriteCSVData [^Writer w
+                                 ^java.util.concurrent.atomic.AtomicLong row-count
+                                 ^CharBuffer cb])
+
 
 (defn write-csv-rf
   "Returns a transduce-compatible rf that will write a csv.
-  See options for [[write-csv]]."
+  See options for [[write-csv]].
+
+  This rf must be finalized (rf last-reduced-value) and will return the number of rows
+  written in that case.
+
+  Example:
+
+```clojure
+user> (transduce (map identity) (charred/write-csv-rf \"test.csv\") [[:a :b :c][1 2 3]])
+2
+user> (slurp \"test.csv\")
+\":a,:b,:c\n1,2,3\n\"
+```"
   ([w] (write-csv-rf w nil))
   ([w options]
    (let [^String line-end (case (get options :newline :lf)
@@ -390,16 +407,18 @@
                        CSVWriter/truePredicate
                        :else
                        (coerce/->predicate quote?-arg)))
-         cb (CharBuffer.)
-         sep (unchecked-int sep)
-         w (io/writer w)]
+         sep (unchecked-int sep)]
      (fn
-       ([] (io/writer w))
-       ([w] (when close-writer?
-              (.close ^Writer w)))
-       ([^Writer w row]
+       ([] (WriteCSVData. (io/writer w) (AtomicLong.) (CharBuffer.)))
+       ([^WriteCSVData ws]
+        (when close-writer?
+          (.close ^Writer (.-w ws)))
+        (.get ^AtomicLong (.-row-count ws)))
+       ([^WriteCSVData ws row]
         (reduce (fn [first? field]
-                  (let [field (str field)]
+                  (let [field (str field)
+                        ^Writer w (.-w ws)
+                        ^CharBuffer cb (.-cb ws)]
                     (when-not first? (.write w sep))
                     (if (.test quote-pred field)
                       (do
@@ -409,7 +428,9 @@
                     false))
                 true
                 row)
-        (.write w line-end))))))
+        (.write ^Writer (.-w ws) line-end)
+        (.incrementAndGet ^AtomicLong (.-row-count ws))
+        ws)))))
 
 
 (defn write-csv
