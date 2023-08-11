@@ -4,6 +4,30 @@
   (:import [clojure.lang IReduceInit]))
 
 
+(defn cat-csv-rows
+  "Stateful transducer that, given an input, reduces over the csv rows.
+
+  Options:
+   - `:header?` - defaults to true - assume first row of each file is a reader row.
+
+  Options are passed through to read-csv-supplier."
+  ([] (cat-csv-rows nil))
+  ([options]
+   (let [header? (get options :header? true)]
+     (fn [row-rf]
+       (let [first?* (volatile! true)]
+         (fn
+           ([] (row-rf))
+           ([acc] (row-rf acc))
+           ([acc input]
+            (let [s (charred/read-csv-supplier input options)
+                  first? @first?*]
+              (when first? (vreset! first?* false))
+              (reduce row-rf acc
+                      (if (and header? (not first?))
+                        (do (.get s) s)
+                        s))))))))))
+
 
 (defn concatenate-csv
   "Given a sequence of csv files, concatenate into a single csv file.
@@ -33,33 +57,8 @@ user> (->> (repeat 10 (java.io.File. \"/home/chrisn/dev/tech.all/tech.ml.dataset
   ([output options fseq]
    ;; The plan here is to provide write-csv an implementation of IReduceInit that does the
    ;; concatenation and transformation of the data inline with the reduce call.
-   (let [user-tfn (get options :tfn identity)
-         header? (get options :header? true)]
-     (apply charred/write-csv
-            output
-            (reify IReduceInit
-              (reduce [this rfn init]
-                (let [first-output?* (volatile! true)
-                      row-count (java.util.concurrent.atomic.AtomicLong.)]
-                  (reduce (fn [acc input]
-                            (let [s (charred/read-csv-supplier input options)
-                                  tfn (if (and header? (not @first-output?*))
-                                        (let [first?* (volatile! true)]
-                                          (fn [row]
-                                            (if @first?*
-                                              (do
-                                                (vreset! first?* false)
-                                                nil)
-                                              (user-tfn row))))
-                                        user-tfn)]
-                              (vreset! first-output?* false)
-                              (reduce #(if-let [row (tfn %2)]
-                                         (do
-                                           (.incrementAndGet row-count)
-                                           (rfn %1 row))
-                                         %1)
-                                      init s)))
-                          init
-                          fseq)
-                  (.get row-count))))
-            (apply concat (seq options))))))
+   (let [cat-tf (cat-csv-rows options)
+         write-rf (charred/write-csv-rf output options)]
+     (if-let [tfn (get options :tfn)]
+       (transduce (comp cat-tf (map tfn)) write-rf fseq)
+       (transduce cat-tf write-rf fseq)))))
