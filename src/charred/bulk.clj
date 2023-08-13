@@ -150,3 +150,26 @@ user> (->> (repeat 10 (java.io.File. \"/home/chrisn/dev/tech.all/tech.ml.dataset
      (if-let [tfn (get options :tfn)]
        (transduce (comp cat-tf (map tfn)) write-rf fseq)
        (transduce cat-tf write-rf fseq)))))
+
+
+(comment
+
+  ;;Interesting example of loading a zipped csv directly from disk without unzipping
+
+  (import '[java.util.zip ZipFile ZipInputStream])
+  (require '[clojure.java.io :as io])
+  (defn load-zip
+    [fname]
+    (let [zf (ZipInputStream. (io/input-stream fname))
+          fe (.getNextEntry zf)
+          _ (println (format "Found %s" (.getName fe)))
+          s (charred/read-csv-supplier zf)
+          row-batches (batch-csv-rows 10000 s)]
+      (reduce (fn [rc row-batch]
+                (+ rc (reduce (fn [rrc row]
+                                (+ rrc 1))
+                              0
+                              row-batch)))
+              0
+              row-batches)))
+  )
