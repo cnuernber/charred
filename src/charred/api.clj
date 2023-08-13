@@ -395,7 +395,7 @@ user> (slurp \"test.csv\")
                             :lf "\n"
                             :cr "\r"
                             :cr+lf "\r\n")
-         close-writer? (get options :close-writer? true)
+         close-writer? (get options :close-writer? (string? w))
          quote (unchecked-char (->character (get options :quote \")))
          sep (unchecked-char (->character (get options :separator \,)))
          quote?-arg (get options :quote?)
@@ -434,7 +434,8 @@ user> (slurp \"test.csv\")
 
 
 (defn write-csv
-  "Writes data to writer in CSV-format.
+  "Writes data to writer in CSV-format.  See also [[write-csv-rf]].
+
    Options:
 
      * `:separator` - Default \\,)
@@ -443,7 +444,8 @@ user> (slurp \"test.csv\")
         Defaults to quoting only when necessary.  May also be the the value 'true' in which
         case every field is quoted.
      * `:newline` - `:lf` (default) or `:cr+lf`)
-     * `:close-writer?` - defaults to true.  When true, close writer when finished."
+     * `:close-writer?` - defaults to false unless `w` is a string.  When true, close writer
+        when finished."
   ([w data & {:as options}]
    (let [write-rf (write-csv-rf w options)]
      (-> (reduce write-rf (write-rf) data)

@@ -1,5 +1,9 @@
 # Charred Changelog
 
+## 1.030
+ * transduce-compatible write-csv-rf pathway.
+ * write-csv! no longer defaults close-writer! to true unless the writer is a string.
+
 ## 1.029
  * read-csv will no longer auto-close the reader unless :close-reader? true is explicitly provided.
  * bulk namespace for methods of dealing with large numbers of inputs.  Initial operation is

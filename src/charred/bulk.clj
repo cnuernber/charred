@@ -12,7 +12,7 @@
   inputs when `:header?` is true.
 
   Options:
-   - `:header?` - defaults to true - assume first row of each file is a reader row.
+   - `:header?` - defaults to true - assume first row of each file is a header row.
 
   Options are passed through to read-csv-supplier.
 
@@ -21,7 +21,7 @@
   ```clojure
   (transduce (comp (bulk/cat-csv-inputs options) (map tfn)) (charred/write-csv-rf options) fseq)
   ```"
-  ([] (cat-csv-rows nil))
+  ([] (cat-csv-inputs nil))
   ([options]
    (let [header? (get options :header? true)]
      (fn [row-rf]
@@ -145,7 +145,7 @@ user> (->> (repeat 10 (java.io.File. \"/home/chrisn/dev/tech.all/tech.ml.dataset
   ([output options fseq]
    ;; The plan here is to provide write-csv an implementation of IReduceInit that does the
    ;; concatenation and transformation of the data inline with the reduce call.
-   (let [cat-tf (cat-csv-rows options)
+   (let [cat-tf (cat-csv-inputs options)
          write-rf (charred/write-csv-rf output options)]
      (if-let [tfn (get options :tfn)]
        (transduce (comp cat-tf (map tfn)) write-rf fseq)
