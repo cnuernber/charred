@@ -44,7 +44,7 @@
                                 ^{:unsynchronized-mutable true
                                   :tag long} idx]
   Iterator
-  (hasNext [this] (or (and (.hasNext src) (< count idx)) first-row))
+  (hasNext [this] (boolean (or (and (.hasNext src) (< idx count)) first-row)))
   (next [this] (let [rval (if first-row first-row (.next src))]
                  (if first-row
                    (set! first-row nil)

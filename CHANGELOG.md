@@ -1,5 +1,8 @@
 # Charred Changelog
 
+## 1.031
+ * Fix to bulk row-batch iterator.
+
 ## 1.030
  * transduce-compatible write-csv-rf pathway.
  * write-csv! no longer defaults close-writer! to true unless the writer is a string.
