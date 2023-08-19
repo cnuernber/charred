@@ -90,7 +90,7 @@
 (defn batch-csv-rows
   "Given a potentially very large sequence of rows, lazily return batches of rows.
   Returned object has an efficient iterator, IReduceInit (3 arg reduce) implementations
-  and an efficient seq (safest) implementation.  **Each previous batch must be completely
+  and an efficient seq (safest) implementation.  **When using raw iterator, each previous batch must be completely
   read before the .hasNext function of the iterator will return an accurate result.**
 
 
@@ -99,7 +99,7 @@
   operations.  This allows the CSV system to run at full speed while potentially cpu-intensive
   processing can happen in other threads.  Recommended batch sizes for this pathway are
   around 128000.  The loading can be stopped prematurely by closing the returned value
-  *or* reading the entirety of the sequence.
+  *and* reading the entirety of the sequence.
 
   Options:
 
@@ -110,7 +110,7 @@
   * `:csv-load-queue-depth` - Queue depth used for each batch of rows.  Defaults to 4.
   * `:csv-load-queue-timeout` - Timeout in milliseconds used for .put calls.  Defaults
     to 5 seconds.
-  * `:csv-load-log-level` - Defaults to :info.  Options are `:debug` or `:info`.
+  * `:csv-load-log-level` - Defaults to `:debug`.  Options are `:debug` or `:info`.
 
   Examples:
 
@@ -135,7 +135,7 @@ user> (->> (charred/read-csv-supplier (java.io.File. \"stocks.csv\"))
            (bulk/batch-csv-rows 100)
            (reduce (fn [rc batch] (+ rc (count (vec batch))))
                    0))
-;; Threaded example - not the batch is already a vector
+;; Threaded example - note the batch is already a vector
 user> (->> (charred/read-csv-supplier (java.io.File. \"stocks.csv\"))
            (bulk/batch-csv-rows 100 {:csv-load-thread-name \"CSV loader\" :csv-load-log-level :info})
            (reduce (fn [rc batch] (+ rc (count batch)))
