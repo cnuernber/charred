@@ -19,8 +19,7 @@
    :exec-fn codox.main/-main
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
-               ;;Change this also in build.clj
-               :version "1.031"
+               :version "1.032"
                :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}
