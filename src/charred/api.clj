@@ -572,8 +572,8 @@ user> (slurp \"test.csv\")
   * `:obj-iface` - Implementation of JSONReader$ObjReader called for each javascript
     object.  Note that providing this overrides key-fn and value-fn.
   * `:eof-error?` - Defaults to true - when eof is encountered when attempting to read an
-     object throw an EOF error.  Else returns a special EOF value.
-  * `:eof-value` - EOF value.  Defaults to
+     object throw an EOF error.  Else returns a special EOF value, controlled by the `:eof-value` option.
+  * `:eof-value` - EOF value.  Defaults to the keyword `:eof`
   * `:eof-fn` - Function called if readObject is going to return EOF.  Defaults to throwing an
      EOFException.
   * `:parser-fn` - Function that overrides the array-iface and obj-iface parameters - this is
