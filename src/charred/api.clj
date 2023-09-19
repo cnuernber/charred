@@ -259,9 +259,11 @@
   * `:quote` - Quote specifier - defaults to //\".
   * `:escape` - Escape character - defaults to disabled.
   * `:close-reader?` - Close the reader when iteration is finished - defaults to true.
-  * `:column-allowlist` - Sequence of allowed column names or indexes.
+  * `:column-allowlist` - Sequence of allowed column names or indexes. `:column-whitelist` still
+     works but isn't preferred.
   * `:column-blocklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
-     `:column-allowlist` then `:column-allowlist` wins.
+     `:column-allowlist` then `:column-allowlist` wins. `:column-blacklist` still works but
+     isn't preferred
   * `:comment-char` - Defaults to #.  Rows beginning with character are discarded with no
     further processing.  Setting the comment-char to nil or `(char 0)` disables comment lines.
   * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
