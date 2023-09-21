@@ -259,9 +259,11 @@
   * `:quote` - Quote specifier - defaults to //\".
   * `:escape` - Escape character - defaults to disabled.
   * `:close-reader?` - Close the reader when iteration is finished - defaults to true.
-  * `:column-whitelist` - Sequence of allowed column names or indexes.
-  * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
-     `:column-whitelist` then `:column-whitelist` wins.
+  * `:column-allowlist` - Sequence of allowed column names or indexes. `:column-whitelist` still
+     works but isn't preferred.
+  * `:column-blocklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
+     `:column-allowlist` then `:column-allowlist` wins. `:column-blacklist` still works but
+     isn't preferred
   * `:comment-char` - Defaults to #.  Rows beginning with character are discarded with no
     further processing.  Setting the comment-char to nil or `(char 0)` disables comment lines.
   * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
@@ -294,19 +296,21 @@
         ;;mutably changes row in place
         next-row (.nextRow row-reader)
         ensure-long (fn [data] (if (number? data) (long data) data))
-        ^BitSet column-whitelist
-        (when (or (contains? options :column-whitelist)
+        ^BitSet column-allowlist
+        (when (or (contains? options :column-allowlist)
+                  (contains? options :column-blocklist)
+                  (contains? options :column-whitelist)
                   (contains? options :column-blacklist))
-          (let [whitelist (when-let [data (get options :column-whitelist)]
+          (let [allowlist (when-let [data (get options :column-allowlist (get options :column-whitelist))]
                             (set (map ensure-long data)))
-                blacklist (when-let [data (get options :column-blacklist)]
-                            (set/difference (set (map ensure-long data)) (or whitelist #{})))
+                blocklist (when-let [data (get options :column-blocklist (get options :column-blacklist))]
+                            (set/difference (set (map ensure-long data)) (or allowlist #{})))
                 indexes
                 (->> next-row
                      (map-indexed
                       (fn [col-idx cname]
-                        (when (or (and whitelist (or (whitelist cname) (whitelist col-idx)))
-                                  (and blacklist (not (or (blacklist cname) (blacklist col-idx)))))
+                        (when (or (and allowlist (or (allowlist cname) (allowlist col-idx)))
+                                  (and blocklist (not (or (blocklist cname) (blocklist col-idx)))))
                           col-idx)))
                      (remove nil?)
                      (seq))
@@ -314,21 +318,21 @@
             (doseq [idx indexes]
               (.set bmp (unchecked-int idx)))
             bmp))
-        ^LongPredicate col-pred (if column-whitelist
-                                   (reify LongPredicate
-                                     (test [this arg]
-                                       (.get column-whitelist (unchecked-int arg))))
-                                   true-unary-predicate)
+        ^LongPredicate col-pred (if column-allowlist
+                                  (reify LongPredicate
+                                    (test [this arg]
+                                      (.get column-allowlist (unchecked-int arg))))
+                                  true-unary-predicate)
         close-fn* (delay
                     (when (get options :close-reader? true)
                       (.close rdr)))
-        next-row (if (and next-row column-whitelist)
+        next-row (if (and next-row column-allowlist)
                    (let [^List cur-row next-row
                          nr (.size cur-row)]
                      (loop [new-row (.newArray array-iface)
                             idx 0]
                        (if (< idx nr)
-                         (recur (if (.get column-whitelist idx)
+                         (recur (if (.get column-allowlist idx)
                                   (.onValue array-iface new-row (.get cur-row idx))
                                   new-row)
                                 (unchecked-inc idx))

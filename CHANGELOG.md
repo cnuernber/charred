@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.033 
+
+ * blacklist and whitelist can now be done as blocklist and allowlist
+
 ## 1.032
  * Added async pathway to bulk/batch-csv-rows method.  This is useful because
    parsing the csv can be cpu-intensive and this allows you to offload that work

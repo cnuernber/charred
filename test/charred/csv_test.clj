@@ -131,6 +131,46 @@ air, moon roof, loaded\",4799.00")
                         :comment-char \#)))))
 
 
+(deftest allowlist-empty-file-test
+  (let [data (seq (read-csv (java.io.File. "test/data/emptyfile.csv")
+                            :column-allowlist ["firstcol"]))]
+    (is (nil? data))))
+
+
+(deftest allowlist-test
+  (is (= [["char" "word"]
+          ["t" "true"]
+          ["f" "False"]
+          ["y" "YES"]
+          ["n" "NO"]
+          ["T" "positive"]
+          ["F" "negative"]
+          ["Y" "yep"]
+          ["N" "not"]
+          ["A" "pos"]
+          ["z" "neg"]]
+         (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
+                        :column-allowlist ["char" "word"]
+                        :comment-char \#)))))
+
+
+(deftest integer-allowlist-test
+  (is (= [["char" "word"]
+          ["t" "true"]
+          ["f" "False"]
+          ["y" "YES"]
+          ["n" "NO"]
+          ["T" "positive"]
+          ["F" "negative"]
+          ["Y" "yep"]
+          ["N" "not"]
+          ["A" "pos"]
+          ["z" "neg"]]
+         (vec (read-csv (java.io.File. "test/data/datatype_parser.csv")
+                        :column-allowlist [1 2]
+                        :comment-char \#)))))
+
+
 (deftest csv-odd-bufsize
   ;;Test to ensure that contiuning any particular parse pathway
   ;;into a new buffer works.
