@@ -33,8 +33,9 @@
            [java.util.function Supplier LongPredicate BiConsumer]
            [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry Set
             ArrayList Iterator]
+           [java.util.logging Logger Level]
            [java.io Reader StringReader Writer StringWriter]
-           [clojure.lang MapEntry Keyword Symbol Seqable IReduce]
+           [clojure.lang MapEntry Keyword Symbol Seqable IReduce IReduceInit]
            [java.sql Date]
            [java.time Instant]))
 
@@ -538,7 +539,22 @@ user> (slurp \"test.csv\")
         nextobj)))
   (close [this]
     (set! rdr nil)
-    @close-fn*))
+    @close-fn*)
+  IReduceInit
+  (reduce [this rfn acc]
+    (loop [acc acc
+           v (.get this)]
+      (if (and v (not (reduced? acc)))
+        (recur (rfn acc v) (.get this))
+        (do
+          (.close this)
+          (if (reduced? acc)
+            (deref acc)
+            acc)))))
+  Seqable
+  (seq [this]
+    (coerce/supplier->seq this)))
+
 
 
 (defn read-json-supplier

@@ -1,7 +1,7 @@
 # Charred Changelog
 ## 1.033 
-
  * blacklist and whitelist can now be done as blocklist and allowlist
+ * read-json-supplier returns a supplier something seqable and reducible so `(vec (read-json-supplier (io/file ...)))` works like one thinks it would.
 
 ## 1.032
  * Added async pathway to bulk/batch-csv-rows method.  This is useful because
