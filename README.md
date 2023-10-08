@@ -13,6 +13,7 @@ Efficient character-based file parsing for csv and json formats.
 
 * [API Documentation](https://cnuernber.github.io/charred/)
 * [Simple JSON benchmarks](https://github.com/cnuernber/fast-json)
+* [Large CSV Support](https://cnuernber.github.io/charred/charred.bulk.html#var-batch-csv-rows)
 
 
 ## Usage

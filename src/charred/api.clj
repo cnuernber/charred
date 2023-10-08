@@ -33,8 +33,9 @@
            [java.util.function Supplier LongPredicate BiConsumer]
            [java.util Arrays Iterator NoSuchElementException BitSet List Map Map$Entry Set
             ArrayList Iterator]
+           [java.util.logging Logger Level]
            [java.io Reader StringReader Writer StringWriter]
-           [clojure.lang MapEntry Keyword Symbol Seqable IReduce]
+           [clojure.lang MapEntry Keyword Symbol Seqable IReduce IReduceInit]
            [java.sql Date]
            [java.time Instant]))
 
@@ -259,9 +260,11 @@
   * `:quote` - Quote specifier - defaults to //\".
   * `:escape` - Escape character - defaults to disabled.
   * `:close-reader?` - Close the reader when iteration is finished - defaults to true.
-  * `:column-whitelist` - Sequence of allowed column names or indexes.
-  * `:column-blacklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
-     `:column-whitelist` then `:column-whitelist` wins.
+  * `:column-allowlist` - Sequence of allowed column names or indexes. `:column-whitelist` still
+     works but isn't preferred.
+  * `:column-blocklist` - Sequence of dis-allowed column names or indexes.  When conflicts with
+     `:column-allowlist` then `:column-allowlist` wins. `:column-blacklist` still works but
+     isn't preferred
   * `:comment-char` - Defaults to #.  Rows beginning with character are discarded with no
     further processing.  Setting the comment-char to nil or `(char 0)` disables comment lines.
   * `:trim-leading-whitespace?` - When true, leading spaces and tabs are ignored.  Defaults
@@ -294,19 +297,21 @@
         ;;mutably changes row in place
         next-row (.nextRow row-reader)
         ensure-long (fn [data] (if (number? data) (long data) data))
-        ^BitSet column-whitelist
-        (when (or (contains? options :column-whitelist)
+        ^BitSet column-allowlist
+        (when (or (contains? options :column-allowlist)
+                  (contains? options :column-blocklist)
+                  (contains? options :column-whitelist)
                   (contains? options :column-blacklist))
-          (let [whitelist (when-let [data (get options :column-whitelist)]
+          (let [allowlist (when-let [data (get options :column-allowlist (get options :column-whitelist))]
                             (set (map ensure-long data)))
-                blacklist (when-let [data (get options :column-blacklist)]
-                            (set/difference (set (map ensure-long data)) (or whitelist #{})))
+                blocklist (when-let [data (get options :column-blocklist (get options :column-blacklist))]
+                            (set/difference (set (map ensure-long data)) (or allowlist #{})))
                 indexes
                 (->> next-row
                      (map-indexed
                       (fn [col-idx cname]
-                        (when (or (and whitelist (or (whitelist cname) (whitelist col-idx)))
-                                  (and blacklist (not (or (blacklist cname) (blacklist col-idx)))))
+                        (when (or (and allowlist (or (allowlist cname) (allowlist col-idx)))
+                                  (and blocklist (not (or (blocklist cname) (blocklist col-idx)))))
                           col-idx)))
                      (remove nil?)
                      (seq))
@@ -314,21 +319,21 @@
             (doseq [idx indexes]
               (.set bmp (unchecked-int idx)))
             bmp))
-        ^LongPredicate col-pred (if column-whitelist
-                                   (reify LongPredicate
-                                     (test [this arg]
-                                       (.get column-whitelist (unchecked-int arg))))
-                                   true-unary-predicate)
+        ^LongPredicate col-pred (if column-allowlist
+                                  (reify LongPredicate
+                                    (test [this arg]
+                                      (.get column-allowlist (unchecked-int arg))))
+                                  true-unary-predicate)
         close-fn* (delay
                     (when (get options :close-reader? true)
                       (.close rdr)))
-        next-row (if (and next-row column-whitelist)
+        next-row (if (and next-row column-allowlist)
                    (let [^List cur-row next-row
                          nr (.size cur-row)]
                      (loop [new-row (.newArray array-iface)
                             idx 0]
                        (if (< idx nr)
-                         (recur (if (.get column-whitelist idx)
+                         (recur (if (.get column-allowlist idx)
                                   (.onValue array-iface new-row (.get cur-row idx))
                                   new-row)
                                 (unchecked-inc idx))
@@ -395,7 +400,7 @@ user> (slurp \"test.csv\")
                             :lf "\n"
                             :cr "\r"
                             :cr+lf "\r\n")
-         close-writer? (get options :close-writer? true)
+         close-writer? (get options :close-writer? (string? w))
          quote (unchecked-char (->character (get options :quote \")))
          sep (unchecked-char (->character (get options :separator \,)))
          quote?-arg (get options :quote?)
@@ -434,7 +439,8 @@ user> (slurp \"test.csv\")
 
 
 (defn write-csv
-  "Writes data to writer in CSV-format.
+  "Writes data to writer in CSV-format.  See also [[write-csv-rf]].
+
    Options:
 
      * `:separator` - Default \\,)
@@ -443,7 +449,8 @@ user> (slurp \"test.csv\")
         Defaults to quoting only when necessary.  May also be the the value 'true' in which
         case every field is quoted.
      * `:newline` - `:lf` (default) or `:cr+lf`)
-     * `:close-writer?` - defaults to true.  When true, close writer when finished."
+     * `:close-writer?` - defaults to false unless `w` is a string.  When true, close writer
+        when finished."
   ([w data & {:as options}]
    (let [write-rf (write-csv-rf w options)]
      (-> (reduce write-rf (write-rf) data)
@@ -532,7 +539,22 @@ user> (slurp \"test.csv\")
         nextobj)))
   (close [this]
     (set! rdr nil)
-    @close-fn*))
+    @close-fn*)
+  IReduceInit
+  (reduce [this rfn acc]
+    (loop [acc acc
+           v (.get this)]
+      (if (and v (not (reduced? acc)))
+        (recur (rfn acc v) (.get this))
+        (do
+          (.close this)
+          (if (reduced? acc)
+            (deref acc)
+            acc)))))
+  Seqable
+  (seq [this]
+    (coerce/supplier->seq this)))
+
 
 
 (defn read-json-supplier
@@ -570,8 +592,8 @@ user> (slurp \"test.csv\")
   * `:obj-iface` - Implementation of JSONReader$ObjReader called for each javascript
     object.  Note that providing this overrides key-fn and value-fn.
   * `:eof-error?` - Defaults to true - when eof is encountered when attempting to read an
-     object throw an EOF error.  Else returns a special EOF value.
-  * `:eof-value` - EOF value.  Defaults to
+     object throw an EOF error.  Else returns a special EOF value, controlled by the `:eof-value` option.
+  * `:eof-value` - EOF value.  Defaults to the keyword `:eof`
   * `:eof-fn` - Function called if readObject is going to return EOF.  Defaults to throwing an
      EOFException.
   * `:parser-fn` - Function that overrides the array-iface and obj-iface parameters - this is

@@ -1,4 +1,20 @@
 # Charred Changelog
+## 1.033 
+ * blacklist and whitelist can now be done as blocklist and allowlist
+ * read-json-supplier returns a supplier something seqable and reducible so `(vec (read-json-supplier (io/file ...)))` works like one thinks it would.
+
+## 1.032
+ * Added async pathway to bulk/batch-csv-rows method.  This is useful because
+   parsing the csv can be cpu-intensive and this allows you to offload that work
+   onto a separate thread but still get a simple sequence of batches.  See docs
+   for [bulk/batch-csv-rows](https://cnuernber.github.io/charred/charred.bulk.html#var-batch-csv-rows).
+
+## 1.031
+ * Fix to bulk row-batch iterator.
+
+## 1.030
+ * transduce-compatible write-csv-rf pathway.
+ * write-csv! no longer defaults close-writer! to true unless the writer is a string.
 
 ## 1.029
  * read-csv will no longer auto-close the reader unless :close-reader? true is explicitly provided.
