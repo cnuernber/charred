@@ -1,4 +1,4 @@
 #!/bin/bash
 
 scripts/compile
-clj -M:test
+clojure -M:test
