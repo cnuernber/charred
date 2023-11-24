@@ -40,17 +40,24 @@ public class LineNumberReader {
     return update(buffer[position++]);
   }
   public void unread() {
+    if(len == -1) return;
     if(position == 0 || len == 0)
       throw new RuntimeException("Too many unread ops.");
     //unread on eof is a noop
+    position--;
+    if(buffer[position] == '\n') {
+      --line;
+      column = lastColumn;
+    } else {
+      --column;
+    }
+  }
+
+
+  public void unread(int ch) {
     if(len != -1) {
-      position--;
-      if(buffer[position] == '\n') {
-	--line;
-	column = lastColumn;
-      } else {
-	--column;
-      }
+      unread();
+      buffer[position] = (char)ch;
     }
   }
   
