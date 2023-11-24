@@ -55,10 +55,9 @@ public class LineNumberReader {
 
 
   public void unread(int ch) {
-    if(len != -1) {
-      unread();
-      buffer[position] = (char)ch;
-    }
+    if(len == -1) return;
+    unread();
+    buffer[position] = (char)ch;
   }
   
   public char[] buffer() throws IOException {
