@@ -183,6 +183,7 @@ public final class CSVReader {
 	if(tag != QUOT) {
 	  if(tag == COMMENT) {
 	    rdr.csvReadComment();
+	    comment = true;
 	  } else {
 	    if (p.test(colidx))
 	      curRow = arrayReader.onValue(curRow, sb.toString());

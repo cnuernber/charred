@@ -247,3 +247,11 @@ air, moon roof, loaded\",4799.00")
 
 (deftest forward-slash-quoted-chars
   (is (every? #(== 4 (count %)) (read-csv (java.io.File. "test/data/alb2.csv") :escape \\))))
+
+(deftest several-comments-issue-26
+  (is (= [["data"]]
+         (api/read-csv "# c1
+# c2
+# c3
+# c4
+data" :comment-char \#))))
