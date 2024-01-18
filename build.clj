@@ -20,13 +20,21 @@
             :basis basis
             :javac-opts ["-source" "8" "-target" "8" "-Xlint:unchecked"]}))
 
+(def pom-template
+  [[:licenses
+    [:license
+     [:name "MIT License"]
+     [:url "https://github.com/cnuernber/charred/blob/master/LICENSE"]]]])
+
 (defn jar [_]
   (compile nil)
   (b/write-pom {:class-dir class-dir
                 :lib lib
                 :version version
                 :basis basis
-                :src-dirs ["src"]})
+                :src-dirs ["src"]
+                :pom-data pom-template})
+  
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
   (b/jar {:class-dir class-dir

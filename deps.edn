@@ -2,7 +2,7 @@
  :aliases
  {;; Run with clj -T:build function-in-build
   :build
-  {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.9.6" :git/sha "8e78bcc"}}
    :ns-default build}
   :test
   {:extra-deps {com.cognitect/test-runner
@@ -19,7 +19,7 @@
    :exec-fn codox.main/-main
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
-               :version "1.033"
+               :version "1.034"
                :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}
