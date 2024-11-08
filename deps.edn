@@ -19,7 +19,7 @@
    :exec-fn codox.main/-main
    :exec-args {:group-id "com.cnuernber"
                :artifact-id "charred"
-               :version "1.034"
+               :version "1.035-SNAPSHOT"
                :name "Charred"
                :description "Fast (as anything on the JVM) simple csv and json reading/writing"
                :metadata {:doc/format :markdown}

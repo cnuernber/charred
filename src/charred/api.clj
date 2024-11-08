@@ -21,7 +21,6 @@
   out of the supplier then the supplier itself will close the input when finished."
   (:require [charred.coerce :as coerce]
             [charred.parallel :as parallel]
-            [clojure.java.io :as io]
             [clojure.set :as set])
   (:import [charred CharBuffer CharReader CSVReader CSVReader$RowReader JSONReader
             JSONReader$ObjReader CloseableSupplier CSVWriter JSONWriter
@@ -51,8 +50,10 @@
     item
     (string? item)
     (StringReader. item)
+    (instance? java.io.File item)
+    (java.io.FileReader. ^java.io.File item)
     :else
-    (io/reader item)))
+    ((requiring-resolve 'clojure.java.io/reader) item)))
 
 
 (deftype RotatingCharBufFn [^{:unsynchronized-mutable true
@@ -414,7 +415,7 @@ user> (slurp \"test.csv\")
                        (coerce/->predicate quote?-arg)))
          sep (unchecked-int sep)]
      (fn
-       ([] (WriteCSVData. (io/writer w) (AtomicLong.) (CharBuffer.)))
+       ([] (WriteCSVData. ((requiring-resolve 'clojure.java.io/writer) w) (AtomicLong.) (CharBuffer.)))
        ([^WriteCSVData ws]
         (when close-writer?
           (.close ^Writer (.-w ws)))
@@ -711,7 +712,7 @@ Defaults to toString for types that aren't representable in json."))
                              (str opt)
                              nil)
         obj-fn (coerce/->bi-consumer (get options :obj-fn default-obj-fn))]
-    #(JSONWriter. (io/writer %) esc-js? esc-slash? esc-uni? indent-str obj-fn)))
+    #(JSONWriter. ((requiring-resolve 'clojure.java.io/writer) %) esc-js? esc-slash? esc-uni? indent-str obj-fn)))
 
 
 (defn write-json
