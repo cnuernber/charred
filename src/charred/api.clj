@@ -130,6 +130,7 @@
   (let [rdr (->reader rdr)
         async? (and (> (.availableProcessors (Runtime/getRuntime)) 1)
                     (get options :async? true))
+        default-bufsize (* 10 1024) ;;tested a bit - 10K seems to balance a few things well
         options (if async?
                   ;;You need some number more buffers than queue depth else buffers will be
                   ;;overwritten during processing.  I calculate you need at least 2  - one
@@ -142,10 +143,10 @@
                     (assoc options :queue-depth qd
                            :async? true
                            :n-buffers n-buffers
-                           :bufsize (get options :bufsize (* 64 1024))))
+                           :bufsize (get options :bufsize default-bufsize)))
                   (assoc options :async? false))
         n-buffers (long (get options :n-buffers -1))
-        bufsize (long (get options :bufsize (* 64 1024)))
+        bufsize (long (get options :bufsize default-bufsize))
         src-fn (if (> n-buffers 0)
                  (let [buffers (object-array n-buffers)]
                    (dotimes [idx n-buffers] (aset buffers idx (char-array bufsize)))
