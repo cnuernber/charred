@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.function.BiConsumer;
+
 import java.util.List;
 import java.util.Map;
 import clojure.lang.Ratio;
@@ -68,9 +69,7 @@ public class JSONWriter implements AutoCloseable {
   public static boolean isJSSep(final char data) {
     return data == 8232 || data == 8233;
   }
-  public void writeString(CharSequence data) throws IOException {
-    final CharBuffer cb = charBuffer();
-    cb.append('"');
+  public void writeStringFallback(CharBuffer cb, CharSequence data) throws IOException {
     final int dlen = data.length();
     for (int idx = 0; idx < dlen; ++idx ) {
       final char cdata = data.charAt(idx);
@@ -102,9 +101,34 @@ public class JSONWriter implements AutoCloseable {
 	break;
       }
     }
+  }
+
+  public void writeString(CharSequence data) throws IOException {
+    final CharBuffer cb = charBuffer();
     cb.append('"');
+
+    final int dlen = data.length();
+    int idx = 0;
+
+    while (idx < dlen) {
+      final char c = data.charAt(idx);
+
+      if ((int) c < 128 && c != '"') {
+        ++idx;
+      } else {
+        break;
+      }
+    }
+
+    cb.append(data.subSequence(0, idx));
+
+    writeStringFallback(cb,data.subSequence(idx, dlen));
+
+    cb.append('"');
+
     writeBuffer(w,cb);
   }
+
   public void writeNumber(Number n) throws Exception {
     if (n instanceof Ratio)
       n = ((Ratio)n).doubleValue();

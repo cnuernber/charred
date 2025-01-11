@@ -5,3 +5,8 @@ pom.xml
 *.asc
 issue-data
 issues
+.cpcache
+.clj-kondo
+.lsp
+.portal
+repl.calva-repl
