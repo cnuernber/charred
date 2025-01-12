@@ -1,4 +1,8 @@
 {:paths ["src" "target/classes"]
+ :deps/prep-lib
+ {:alias :build
+  :fn compile
+  :ensure "target/classes"}
  :aliases
  {;; Run with clj -T:build function-in-build
   :build
