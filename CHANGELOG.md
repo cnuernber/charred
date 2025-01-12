@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.035
+ * Minor optimization of buffer sizes in async read test.
+ * Major [JSON write optimization](https://github.com/cnuernber/charred/pull/30) - thanks @FieryCod
+ 
 ## 1.034
  * [CSV issue 26](https://github.com/cnuernber/charred/issues/26) - several comments in a row now parse correctly.
  
