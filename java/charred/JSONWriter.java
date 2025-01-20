@@ -112,8 +112,13 @@ public class JSONWriter implements AutoCloseable {
 
     while (idx < dlen) {
       final char c = data.charAt(idx);
+      final int cInt = (int) c;
 
-      if ((int) c < 128 && c != '"') {
+      if (cInt >= 32 && cInt < 128
+          && cInt != 34 // "
+          && cInt != 92 // \
+          && cInt != 47 // /
+        ) {
         ++idx;
       } else {
         break;
