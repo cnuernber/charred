@@ -16,6 +16,17 @@
   (is (= 3.14159 (charred/read-json "3.14159")))
   (is (= 6.022e23 (charred/read-json "6.022e23"))))
 
+(deftest regression-31
+  ;; [#31] Newlines no longer escaped in 1.035
+  (is (= 1
+         (->
+          (charred/write-json-str
+           {:some-key "new
+                     lines
+                     here"})
+          str/split-lines
+          count))))
+
 (deftest read-bigint
   (is (= 123456789012345678901234567890N
          (charred/read-json "123456789012345678901234567890"))))
