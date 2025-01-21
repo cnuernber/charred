@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.036
+ * Fix fallout of JSON optimization - [issue 31](https://github.com/cnuernber/charred/issues/31)
+ 
 ## 1.035
  * Minor optimization of buffer sizes in async read test.
  * Major [JSON write optimization](https://github.com/cnuernber/charred/pull/30) - thanks @FieryCod
