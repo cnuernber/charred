@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.037
+ * Fix mutable profile of the json supplier to support arbitrary key-fn and val-fn.
+ 
 ## 1.036
  * Fix fallout of JSON optimization - [issue 31](https://github.com/cnuernber/charred/issues/31)
  

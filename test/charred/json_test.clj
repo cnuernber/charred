@@ -273,3 +273,9 @@
     (is (= {:a 1 :b 2.3 :c "c1"} (.get jdata)))
     (is (= {:a 1 :b 2.3 :c "c1"} (.get jdata)))
     (is (thrown? java.io.EOFException (.get jdata)))))
+
+
+(deftest json-mutable-key-fn
+  (is (keyword? (key (first (charred/read-json (java.io.StringReader. "{\"one two three\": 4}")
+                                               {:profile :mutable 
+                                                :key-fn keyword}))))))

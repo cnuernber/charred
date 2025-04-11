@@ -468,29 +468,36 @@ user> (slurp \"test.csv\")
   (let [eof-error? (get options :eof-error? true)
         eof-value (get options :eof-value :eof)
         [key-fn val-fn] [(get options :key-fn) (get options :value-fn)]
+        val-fn (if key-fn
+                 (or val-fn (fn val-identity [k v] v))
+                 val-fn)
+        key-fn (if val-fn (or key-fn identity) key-fn)
         [obj-iface-default array-iface-default]
         (case (get options :profile :immutable)
           :mutable
-          [JSONReader/mutableObjReader JSONReader/mutableArrayReader]
+          (let [obj-rdr JSONReader/mutableObjReader
+                obj-rdr (if (or key-fn val-fn)
+                          (reify JSONReader$ObjReader
+                            (newObj [this] (.newObj obj-rdr))
+                            (onKV [this obj k v] (.onKV obj-rdr obj (key-fn k) (val-fn k v)))
+                            (finalizeObj [this obj] (.finalizeObj obj-rdr obj)))
+                          obj-rdr)]
+            [obj-rdr JSONReader/mutableArrayReader])
           :raw
           [JSONReader/rawObjReader JSONReader/mutableArrayReader]
           :immutable
           (if (or key-fn val-fn)
-            (let [key-fn (if (= key-fn keyword)
-                           identity
-                           (or key-fn identity))
-                  val-fn (or val-fn (fn val-identity [k v] v))]
-              [(reify JSONReader$ObjReader
-                 (newObj [this] (transient {}))
-                 (onKV [this obj k v]
-                   (let [k (key-fn k)
-                         v (val-fn k v)]
-                     (if-not (identical? v ::elided)
-                       (assoc! obj k v)
-                       obj)))
-                 (finalizeObj [this obj]
-                   (persistent! obj)))
-               JSONReader/immutableArrayReader])
+            [(reify JSONReader$ObjReader
+               (newObj [this] (transient {}))
+               (onKV [this obj k v]
+                 (let [k (key-fn k)
+                       v (val-fn k v)]
+                   (if-not (identical? v ::elided)
+                     (assoc! obj k v)
+                     obj)))
+               (finalizeObj [this obj]
+                 (persistent! obj)))
+             JSONReader/immutableArrayReader]
             [nil nil]))
         parser-fn (get options :parser-fn
                        (let [obj-iface (get options :obj-iface obj-iface-default)
