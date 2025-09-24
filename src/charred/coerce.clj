@@ -181,7 +181,7 @@
     (instance? BiConsumer item)
     item
     (instance? IFn item)
-    (reify BiConsumer (accept [this a1 a2] (item a2 a2)))
+    (reify BiConsumer (accept [this a1 a2] (item a1 a2)))
     :else
     (throw (Exception. (failed-coercion-message item "bi-consumer")))))
 
