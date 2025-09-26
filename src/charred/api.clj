@@ -687,26 +687,26 @@ Defaults to toString for types that aren't representable in json."))
   Symbol
   (->json-data [item] (fullname item)))
 
+(defn default-object-writer [^JSONWriter w value]
+  (let [value (when-not (nil? value) (->json-data value))]
+    (cond
+      (or (sequential? value)
+          (instance? List value)
+          (.isArray (.getClass ^Object value)))
+      (.writeArray w (coerce/->iterator value))
+      (instance? Map value)
+      (.writeMap w (coerce/map-iter (fn [^Map$Entry e]
+                                      (MapEntry. (->json-data (.getKey e))
+                                                 (.getValue e)))
+                                    (.entrySet ^Map value)))
+      :else
+      (.writeObject w value))))
 
 (def ^{:tag java.util.function.BiConsumer
        :private true} default-obj-fn
   (reify BiConsumer
     (accept [this w value]
-      (let [^JSONWriter w w]
-        (let [value (when-not (nil? value) (->json-data value))]
-          (cond
-            (or (sequential? value)
-                (instance? List value)
-                (.isArray (.getClass ^Object value)))
-            (.writeArray w (coerce/->iterator value))
-            (instance? Map value)
-            (.writeMap w (coerce/map-iter (fn [^Map$Entry e]
-                                            (MapEntry. (->json-data (.getKey e))
-                                                       (.getValue e)))
-                                          (.entrySet ^Map value)))
-            :else
-            (.writeObject w value)))))))
-
+      (default-object-writer w value))))
 
 (defn json-writer-fn
   "Return a function that when called efficiently constructs a JSONWriter from the given
