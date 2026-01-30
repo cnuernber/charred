@@ -3,6 +3,7 @@ package charred;
 
 import java.io.Writer;
 import java.io.IOException;
+import java.io.Flushable;
 import java.math.BigInteger;
 import java.math.BigDecimal;
 import java.util.Iterator;
@@ -13,7 +14,7 @@ import java.util.Map;
 import clojure.lang.Ratio;
 
 
-public class JSONWriter implements AutoCloseable {
+public class JSONWriter implements AutoCloseable, Flushable {
   int indent;
   public final Writer w;
   public final boolean escapeJSSep;
@@ -240,5 +241,9 @@ public class JSONWriter implements AutoCloseable {
   }
   public void close() throws Exception {
     w.close();
+  }
+  
+  public void flush() throws IOException {
+    w.flush();  
   }
 }
