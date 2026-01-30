@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.038
+ * [json writers are now flushable](https://github.com/cnuernber/charred/issues/35) - thanks @hlship.
+ 
 ## 1.037
  * Fix mutable profile of the json supplier to support arbitrary key-fn and val-fn.
  
