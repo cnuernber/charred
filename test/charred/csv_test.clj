@@ -255,3 +255,11 @@ air, moon roof, loaded\",4799.00")
 # c3
 # c4
 data" :comment-char \#))))
+
+(deftest drop-empty-rows
+  (let [test-str "1,2,3\n,,\n,,\n3,4,5"]
+    (is (= 2 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? true))))
+    (is (= 4 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? false)))))
+  (let [test-str ",,\n,,\n,,\n,,"]
+    (is (= 0 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? true))))
+    (is (= 4 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? false))))))

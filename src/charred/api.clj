@@ -193,23 +193,41 @@
   (reify LongPredicate
     (test [this arg] true)))
 
+(definterface ^:private RowReader (readRow []))
+
+(defn- empty-row? [^java.util.List l]
+  (let [s (long (or (when l (.size l)) 0))]
+    (loop [idx 0]
+      (if (< idx s)
+        (if-not (CSVReader$RowReader/emptyStr (.get l idx))
+          false
+          (recur (inc idx)))
+        true))))
+
 
 (deftype ^:private CSVRowSupplier [^{:unsynchronized-mutable true
                                      :tag CSVReader$RowReader} rdr
                                    ^{:unsynchronized-mutable true} first-row
+                                   ^{:unsynchronized-mutable true} seq-data
+                                   drop-empty-rows?
                                    close-fn*]
-  CloseableSupplier
-  (get [this]
+  RowReader
+  (readRow [this]
     (if first-row
-      (do
-        (let [fr first-row]
-          (set! first-row nil)
-          fr))
+      (let [fr first-row]
+        (set! first-row nil)
+        fr)
       (when rdr
         (let [retval (.nextRow rdr)]
           (when-not retval
             (.close this))
           retval))))
+  CloseableSupplier
+  (get [this]
+    (loop [rv (.readRow this)]
+      (if (and drop-empty-rows? rv (empty-row? rv))
+        (recur (.readRow this))
+        rv)))
   (close [this]
     (set! first-row nil)
     (set! rdr nil)
@@ -217,12 +235,19 @@
   Iterable
   (iterator [this] (SupplierIterator. this (.get this)))
   Seqable
-  (seq [this] (coerce/supplier->seq this))
+  (seq [this]
+    (when-not seq-data
+      (set! seq-data (coerce/supplier->seq this)))
+    seq-data)
   IReduce
   (reduce [this rfn]
-    (coerce/reduce-supplier rfn this))
+    (if seq-data
+      (reduce rfn seq-data)
+      (coerce/reduce-supplier rfn this)))
   (reduce [this rfn init]
-    (coerce/reduce-supplier rfn init this)))
+    (if seq-data
+      (reduce rfn init seq-data)
+      (coerce/reduce-supplier rfn init this))))
 
 
 (defn- ->character
@@ -274,6 +299,7 @@
      to true
   * `:nil-empty-values?` - When true, empty strings are elided entirely and returned as nil
      values. Defaults to false.
+  * `:drop-empty-rows?` - When true elide empty rows from output.  Defaults to false.
   * `:profile` - Either `:immutable` or `:mutable`.  `:immutable` returns persistent vectors
     while `:mutable` returns arraylists."
   ^CloseableSupplier [input & [options]]
@@ -342,7 +368,7 @@
                    next-row)]
     (.setPredicate row-reader col-pred)
     (if next-row
-      (CSVRowSupplier. row-reader next-row close-fn*)
+      (CSVRowSupplier. row-reader next-row nil (boolean (get options :drop-empty-rows?)) close-fn*)
       (do
         @close-fn*
         (reify CloseableSupplier

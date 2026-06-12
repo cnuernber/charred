@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.039
+ * [new option to drop empty rows -- :drop-empty-rows?](https://github.com/cnuernber/charred/issues/38).
+
 ## 1.038
  * [json writers are now flushable](https://github.com/cnuernber/charred/issues/35) - thanks @hlship.
  
