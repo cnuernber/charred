@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.040
+ * Issues 37 and 34 are fixed
+ 
 ## 1.039
  * [new option to drop empty rows -- :drop-empty-rows?](https://github.com/cnuernber/charred/issues/38).
 
