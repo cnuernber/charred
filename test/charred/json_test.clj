@@ -274,8 +274,14 @@
     (is (= {:a 1 :b 2.3 :c "c1"} (.get jdata)))
     (is (thrown? java.io.EOFException (.get jdata)))))
 
-
 (deftest json-mutable-key-fn
   (is (keyword? (key (first (charred/read-json (java.io.StringReader. "{\"one two three\": 4}")
                                                {:profile :mutable 
                                                 :key-fn keyword}))))))
+
+(deftest issue-34
+  (is (thrown? java.io.EOFException  (charred/read-json (java.io.File. "test/data/err.json") :bufsize 8 :async? false))))
+
+(comment
+  (charred/read-json (java.io.File. "test/data/err.json") :bufsize 8 :async? true :n-buffers 4)
+  )

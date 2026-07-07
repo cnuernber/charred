@@ -137,6 +137,7 @@ public final class JSONReader implements AutoCloseable {
   final Object readString(ICanonicalObjs cv) throws Exception {
     final CharBuffer cb = getCharBuffer();
     char[] buffer = reader.buffer();
+    System.out.println(new String(buffer));
     while(buffer != null) {
       int startpos = reader.position();
       int len = buffer.length;
@@ -168,6 +169,8 @@ public final class JSONReader implements AutoCloseable {
 	  default: throw new CharredException("JSON parse error - Unrecognized escape character: " + data);
 	  }
 	  buffer = reader.buffer();
+	  len = buffer != null ? buffer.length : 0;
+	  if (buffer != null ) System.out.println( new String(buffer));
 	  startpos = reader.position();
 	  //pos will be incremented in loop update
 	  pos = startpos - 1;
@@ -175,6 +178,7 @@ public final class JSONReader implements AutoCloseable {
       }
       cb.append(buffer,startpos,len);
       buffer = reader.nextBuffer();
+      if (buffer != null ) System.out.println( new String(buffer));
     }
     throw new EOFException("JSON parse error - EOF while reading string: " + cb.toString());
   }
