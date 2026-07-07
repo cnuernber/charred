@@ -35,7 +35,7 @@ public class CanonicalKeywords implements ICanonicalObjs {
   public CanonicalKeywords() {
     data = new LeafNode[128];
     mask = data.length - 1;
-    this.threshold = (int)loadFactor * data.length;
+    this.threshold = (int)(loadFactor * data.length);
     this.length = 0;
   }
 
