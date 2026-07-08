@@ -121,7 +121,7 @@
   option but also can make async loading much slower than it would be otherwise.  This must
   be at least 2 larger than queue-depth.
   * `:queue-depth` - Defaults to 4.  See comments on `:n-buffers`.
-  * `:bufsize` - Size of each buffer - defaults to (* 64 1024).  Small improvements are
+  * `:bufsize` - Size of each buffer - defaults to (* 10 1024).  Small improvements are
   sometimes seen with larger or smaller buffers.
   * `:async?` - defaults to true if the number of processors is more than one..  When true
      data is read in an async thread.
