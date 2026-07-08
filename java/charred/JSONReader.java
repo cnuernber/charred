@@ -168,7 +168,7 @@ public final class JSONReader implements AutoCloseable {
 	  default: throw new CharredException("JSON parse error - Unrecognized escape character: " + data);
 	  }
 	  buffer = reader.buffer();
-	  len = buffer != null ? buffer.length : 0;
+	  len = CSVReader.bufferLength(buffer);
 	  startpos = reader.position();
 	  //pos will be incremented in loop update
 	  pos = startpos - 1;
@@ -265,35 +265,6 @@ public final class JSONReader implements AutoCloseable {
     }
     return finalizeNumber(cb, integer, firstChar, dotIndex);
   }
-
-  // Unused for now, used for JSON5 encoding in which keys may be unquoted
-  /* final String readKey(final char firstChar) throws Exception { */
-  /*   final CharBuffer cb = charBuffer; */
-  /*   cb.clear(); */
-  /*   cb.append(firstChar); */
-  /*   char[] buffer = reader.buffer(); */
-  /*   while(buffer != null) { */
-  /*     int len = buffer.length; */
-  /*     final int startpos = reader.position(); */
-  /*     int pos = startpos; */
-  /*     for(; pos < len; ++pos) { */
-  /* 	final char curChar = buffer[pos]; */
-  /* 	if (Character.isWhitespace(curChar) || curChar == ':') { */
-  /* 	  //unread the character */
-  /* 	  reader.position(pos); */
-  /* 	  cb.append(buffer, startpos, pos); */
-  /* 	  final String retval = cb.toString(); */
-  /* 	  if (retval.equals("")) { */
-  /* 	    throw new RuntimeException("Invalid empty key."); */
-  /* 	  } */
-  /* 	  return retval; */
-  /* 	} */
-  /*     } */
-  /*     cb.append(buffer,startpos,pos); */
-  /*     buffer = reader.nextBuffer(); */
-  /*   } */
-  /*   throw new EOFException("EOF while reading a string."); */
-  /* } */
 
   public final String context() throws Exception {
     return reader.context(200);

@@ -1,4 +1,8 @@
 # Charred Changelog
+## 1.041
+ * Small updates to avoid NPE when stream is empty midway through parsing.
+ * Documentation fix on default char reader buffer sizes.
+ 
 ## 1.040
  * Issues 37 and 34 are fixed
  

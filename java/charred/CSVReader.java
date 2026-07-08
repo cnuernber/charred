@@ -19,6 +19,8 @@ public final class CSVReader {
   public static final int QUOT=2;
   public static final int COMMENT=3;
 
+  public static final int bufferLength(char[] buffer) { return buffer != null ? buffer.length : 0; }
+
   public CSVReader(CharReader rdr, char _quot, char _sep, char _comment, char _escape) {
     reader = rdr;
     quot = _quot;
@@ -40,7 +42,7 @@ public final class CSVReader {
 	  if (reader.readFrom(pos+1) == quot) {
 	    sb.append(quot);
 	    buffer = reader.buffer();
-	    len = buffer.length;
+	    len = bufferLength(buffer);
 	    startpos = reader.position();
 	    //account for loop increment
 	    pos = startpos - 1;
@@ -52,7 +54,7 @@ public final class CSVReader {
 	  sb.append(buffer,startpos,pos);
 	  sb.append((char)reader.readFrom(pos+1));
 	  buffer = reader.buffer();
-	  len = buffer.length;
+	  len = bufferLength(buffer);
 	  startpos = reader.position();
 	  //Account for loop increment
 	  pos = startpos - 1;
@@ -117,7 +119,7 @@ public final class CSVReader {
 	  sb.append(buffer, startpos, pos);
 	  sb.append((char)reader.readFrom(pos+1));
 	  buffer = reader.buffer();
-	  len = buffer.length;
+	  len = bufferLength(buffer);
 	  startpos = reader.position();
 	  //Account for loop increment
 	  pos = startpos - 1;

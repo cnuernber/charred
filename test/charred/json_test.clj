@@ -279,9 +279,12 @@
                                                {:profile :mutable 
                                                 :key-fn keyword}))))))
 
-(deftest issue-34
-  (is (thrown? java.io.EOFException  (charred/read-json (java.io.File. "test/data/err.json") :bufsize 8 :async? false))))
 
-(comment
-  (charred/read-json (java.io.File. "test/data/err.json") :bufsize 8 :async? true :n-buffers 4)
-  )
+(defn- chunk-reader [& strings]
+  (charred.ChunkReader. (vec strings)))
+
+(deftest issue-34
+  (is (thrown? java.io.EOFException  (charred/read-json (java.io.File. "test/data/err.json") :bufsize 8 :async? false)))
+  (is (= {"k" "\\more"} (charred/read-json (chunk-reader "{\"k\": \"" "\\" "\\more" "\"}"))))
+  (is (= {"k" "\\more"} (charred/read-json (chunk-reader "{\"k\": \"\\" "\\more" "\"}"))))
+  (is (= {"k" "\\more"} (charred/read-json (chunk-reader "{\"k\": \"" "\\" "\\more\"}")))))
