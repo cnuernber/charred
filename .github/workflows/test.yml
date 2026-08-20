@@ -21,10 +21,10 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '11'
 
       - name: Setup Clojure
-        uses: DeLaGuardo/setup-clojure@v13
+        uses: DeLaGuardo/setup-clojure@v12.5
         with:
           cli: 'latest'
 
