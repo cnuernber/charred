@@ -1,4 +1,7 @@
 # Charred Changelog
+## 1.042
+ * Fix for issue-28 - allow non strings as keys when writing json.  These get converted to strings.
+ 
 ## 1.041
  * Small updates to avoid NPE when stream is empty midway through parsing.
  * Documentation fix on default char reader buffer sizes.
