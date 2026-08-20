@@ -722,8 +722,9 @@ Defaults to toString for types that aren't representable in json."))
       (.writeArray w (coerce/->iterator value))
       (instance? Map value)
       (.writeMap w (coerce/map-iter (fn [^Map$Entry e]
-                                      (MapEntry. (->json-data (.getKey e))
-                                                 (.getValue e)))
+                                      (let [k (.getKey e)]
+                                        (MapEntry. (when-not (nil? k) (->json-data k))
+                                                   (.getValue e))))
                                     (.entrySet ^Map value)))
       :else
       (.writeObject w value))))

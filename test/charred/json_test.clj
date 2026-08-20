@@ -293,3 +293,6 @@
   (is (= "{\"{:a :b}\":{\"c\":\"d\"}}" (charred/write-json-str {{:a :b} {:c :d}})))
   (is (= "{\"enqueue-summary\":{\"true\":1}}" (charred/write-json-str {:enqueue-summary {true 1}})))
   (is (= "{\"1\":\"one\"}" (charred/write-json-str {1 "one"}))))
+
+(deftest issue-28-nil-key
+  (is (= "{\"null\":1}" (charred/write-json-str {nil 1}))))
