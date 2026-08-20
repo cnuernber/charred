@@ -216,7 +216,7 @@ public class JSONWriter implements AutoCloseable, Flushable {
       Object k = val.getKey();
       Object v = val.getValue();
       if (! (k instanceof String) )
-	throw new CharredException("JSON encoding error - Map keys must be strings");
+	  k = String.valueOf(k);
       if (!first) {
 	w.write(",");
       }
