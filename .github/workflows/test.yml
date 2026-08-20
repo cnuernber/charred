@@ -1,36 +1,24 @@
 name: Automated tests
 
-on:
-  push:
+on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Restore cached dependencies
-      uses: actions/cache/restore@v3
-      with:
-        path: |
-           ~/.m2/repository
-           ~/.deps.clj
-        key: cljdeps-${{ hashFiles('deps.edn') }}
-    - name: Java setup
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '8'
-    - name: Setup Clojure
-      uses: DeLaGuardo/setup-clojure@12.1
-      with:
-        cli: 1.11.1.1413
-    - name: Run automated tests
-      run: scripts/run-tests
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-           ~/.m2/repository
-           ~/.deps.clj
-        key: cljdeps-${{ hashFiles('deps.edn') }}
-        restore-keys: cljdeps-
+      - uses: actions/checkout@v4
+
+      - name: Setup Java & Cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+          cache: 'maven'
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: 'latest'
+
+      - name: Run automated tests
+        run: scripts/run-tests
