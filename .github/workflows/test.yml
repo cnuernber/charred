@@ -8,15 +8,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Java & Cache
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.deps.clj
+          key: cljdeps-${{ hashFiles('deps.edn') }}
+          restore-keys: cljdeps-
+
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '11'
-          cache: 'maven'
+          java-version: '8'
 
       - name: Setup Clojure
-        uses: DeLaGuardo/setup-clojure@13
+        uses: DeLaGuardo/setup-clojure@v13
         with:
           cli: 'latest'
 
