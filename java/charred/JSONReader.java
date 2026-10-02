@@ -126,6 +126,19 @@ public final class JSONReader implements AutoCloseable {
     return tempBuf;
   }
 
+  //Consume the literal's remaining characters if they all lie in the current buffer.
+  //On false nothing is consumed.
+  final boolean readLiteral(final String rest) {
+    final char[] buffer = reader.buffer();
+    final int pos = reader.position();
+    final int n = rest.length();
+    if (pos + n > buffer.length) return false;
+    for (int idx = 0; idx < n; ++idx)
+      if (buffer[pos + idx] != rest.charAt(idx)) return false;
+    reader.position(pos + n);
+    return true;
+  }
+
   final CharBuffer getCharBuffer() {
     final CharBuffer cb = charBuffer;
     cb.clear();
@@ -222,10 +235,35 @@ public final class JSONReader implements AutoCloseable {
 	  throw new CharredException("JSON parse error - period must be preceded and followed by a digit: " +
 			      strdata);
       }
+      if (doubleFn == defaultDoubleParser) {
+	final Object rv = NumberParser.parse(cbBuffer, 0, nElems, true);
+	if (rv != NumberParser.UNPARSED)
+	  return rv;
+      }
       return doubleFn.apply(strdata);
     }
   }
+  static boolean numberTerminator(char c) {
+    return c == ',' || c == ']' || c == '}' || CharReader.isWhitespace(c);
+  }
   final Object readNumber(final char firstChar) throws Exception {
+    //Fast path - the number lies entirely within the current buffer so we can parse it
+    //in place.  eatwhite leaves the position just after firstChar.
+    final char[] buffer = reader.buffer();
+    final int startpos = reader.position() - 1;
+    final int len = buffer.length;
+    int pos = startpos + 1;
+    for (; pos < len && !numberTerminator(buffer[pos]); ++pos);
+    if (pos < len) {
+      final Object rv = NumberParser.parse(buffer, startpos, pos, doubleFn == defaultDoubleParser);
+      if (rv != NumberParser.UNPARSED) {
+	reader.position(pos);
+	return rv == Boolean.FALSE ? doubleFn.apply(new String(buffer, startpos, pos - startpos)) : rv;
+      }
+    }
+    return readNumberSlow(firstChar);
+  }
+  final Object readNumberSlow(final char firstChar) throws Exception {
     final CharBuffer cb = getCharBuffer();
     cb.clear();
     cb.append(firstChar);
@@ -238,7 +276,7 @@ public final class JSONReader implements AutoCloseable {
       int len = buffer.length;
       for (; pos < len; ++pos) {
 	final char nextChar = buffer[pos];
-	if (Character.isWhitespace(nextChar) ||
+	if (CharReader.isWhitespace(nextChar) ||
 	    nextChar == ']' ||
 	    nextChar == '}' ||
 	    nextChar == ',' ) {
@@ -284,8 +322,7 @@ public final class JSONReader implements AutoCloseable {
 	if (!hasNext)
 	  throw new CharredException("JSON parse error - One too few commas in your list my friend");
 	first = false;
-	reader.unread();
-	aryObj = aryReader.onValue(aryObj, readObject());
+	aryObj = aryReader.onValue(aryObj, readValue(nextChar));
 	hasNext = reader.eatwhite() == ',';
 	if (!hasNext)
 	  reader.unread();
@@ -340,26 +377,32 @@ public final class JSONReader implements AutoCloseable {
 
   public final Object readObject() throws Exception {
     if (reader == null) return null;
+    return readValue(reader.eatwhite());
+  }
 
-    final char val = reader.eatwhite();
+  //Read a value whose first non-whitespace character has already been consumed.
+  final Object readValue(final char val) throws Exception {
     if (numberChar(val)) {
       return readNumber(val);
     } else {
       switch(val) {
       case '"': return readString();
       case 't': {
+	if (readLiteral("rue")) return true;
 	final char[] data = tempRead(3);
 	if (data[0] == 'r' && data[1] == 'u' && data[2] == 'e')
 	  return true;
 	throw new CharredException("JSON parse error - bad boolean value.");
       }
       case 'f': {
+	if (readLiteral("alse")) return false;
 	final char[] data = tempRead(4);
 	if (data[0] == 'a' && data[1] == 'l' && data[2] == 's' && data[3] == 'e')
 	  return false;
 	throw new CharredException("JSON parse error - bad boolean value.");
       }
       case 'n': {
+	if (readLiteral("ull")) return null;
 	final char[] data = tempRead(3);
 	if (data[0] == 'u' && data[1] == 'l' && data[2] == 'l')
 	  return null;

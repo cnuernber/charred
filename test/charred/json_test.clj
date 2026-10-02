@@ -296,3 +296,52 @@
 
 (deftest issue-28-nil-key
   (is (= "{\"null\":1}" (charred/write-json-str {nil 1}))))
+
+
+(deftest fast-number-parsing-matches-jdk
+  ;;The fast double path must be bit-identical to Double/parseDouble, including when
+  ;;numbers straddle reader buffer boundaries.
+  (let [rng (java.util.Random. 42)
+        doubles (concat (repeatedly 20000 #(Double/longBitsToDouble (.nextLong rng)))
+                        (repeatedly 20000 #(* (.nextGaussian rng)
+                                              (Math/pow 10 (- (.nextInt rng 40) 20))))
+                        [0.0 -0.0 4.9E-324 2.2250738585072014E-308 1.7976931348623157E308
+                         9.007199254740993E15 0.1 0.3])
+        strs (->> doubles
+                  (remove #(or (Double/isNaN %) (Double/isInfinite %)))
+                  (map str)
+                  (concat ["1e22" "1e23" "1e400" "1e-400" "123456789012345678901234567890e-10"
+                           "9007199254740993" "-0" "9223372036854775807"
+                           "-9223372036854775808" "12345678901234567890"]))
+        expected (mapv (fn [^String s]
+                         (if (re-matches #"-?\d+" s)
+                           (bigint s)
+                           (Double/parseDouble s)))
+                       strs)
+        json (str "[" (str/join "," strs) "]")]
+    (doseq [opts [{} {:bufsize 7 :async? false}]]
+      (let [parsed (charred/read-json json opts)]
+        (is (= (count expected) (count parsed)))
+        (is (every? true? (map (fn [e p]
+                                 (if (double? e)
+                                   (= (Double/doubleToRawLongBits e)
+                                      (Double/doubleToRawLongBits p))
+                                   (= e p)))
+                               expected parsed)))))))
+
+
+(deftest literals-across-buffers
+  (let [json "[true,false,null,true,false,null,1,-2,3.5]"
+        expected [true false nil true false nil 1 -2 3.5]]
+    (doseq [bufsize [2 3 5 7 64]]
+      (is (= expected (charred/read-json json {:bufsize bufsize :async? false}))))))
+
+
+(deftest write-integers-and-escapes
+  (is (= "[-9223372036854775808,9223372036854775807,0,-1,42,7,3]"
+         (charred/write-json-str [Long/MIN_VALUE Long/MAX_VALUE 0 -1 (int 42)
+                                  (short 7) (byte 3)])))
+  (is (= "\"\\u00e9\\u2028\\u0001\\/\""
+         (charred/write-json-str "é \u0001/")))
+  (let [s (apply str (repeat 20000 "abc"))]
+    (is (= (str "\"" s "\"") (charred/write-json-str s)))))

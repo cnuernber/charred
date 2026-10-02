@@ -16,7 +16,9 @@ import clojure.lang.Ratio;
 
 public class JSONWriter implements AutoCloseable, Flushable {
   int indent;
+  //All output goes through this unsynchronized buffer - w is the same object.
   public final Writer w;
+  final UnsyncBufferedWriter bw;
   public final boolean escapeJSSep;
   public final boolean escapeSlash;
   public final boolean escapeUnicode;
@@ -29,7 +31,8 @@ public class JSONWriter implements AutoCloseable, Flushable {
 		    boolean _escapeUnicode,
 		    String _indentStr,
 		    BiConsumer<JSONWriter,Object> _objConsumer) {
-    w = _w;
+    bw = _w instanceof UnsyncBufferedWriter ? (UnsyncBufferedWriter)_w : new UnsyncBufferedWriter(_w);
+    w = bw;
     indent = 0;
     charBuffer = new CharBuffer();
     escapeJSSep = _escapeJSSep;
@@ -45,24 +48,13 @@ public class JSONWriter implements AutoCloseable, Flushable {
     cb.append('\\');
     cb.append(data);
   }
+  static final char[] HEX = "0123456789abcdef".toCharArray();
   public static void toHexString(final CharBuffer cb, final char data) {
     escape(cb, 'u');
-    String hexData = Integer.toHexString(data);
-    switch(hexData.length()) {
-    case 1:
-      cb.append('0');
-      cb.append('0');
-      cb.append('0');
-      break;
-    case 2:
-      cb.append('0');
-      cb.append('0');
-      break;
-    case 3:
-      cb.append('0');
-      break;
-    }
-    cb.append(hexData);
+    cb.append(HEX[(data >> 12) & 0xF]);
+    cb.append(HEX[(data >> 8) & 0xF]);
+    cb.append(HEX[(data >> 4) & 0xF]);
+    cb.append(HEX[data & 0xF]);
   }
   public static void writeBuffer(Writer w, CharBuffer b) throws IOException {
     w.write(b.buffer(), 0, b.length());
@@ -105,9 +97,6 @@ public class JSONWriter implements AutoCloseable, Flushable {
   }
 
   public void writeString(CharSequence data) throws IOException {
-    final CharBuffer cb = charBuffer();
-    cb.append('"');
-
     final int dlen = data.length();
     int idx = 0;
 
@@ -126,16 +115,30 @@ public class JSONWriter implements AutoCloseable, Flushable {
       }
     }
 
+    final UnsyncBufferedWriter writer = bw;
+    //Common case - nothing to escape so write the string straight through.
+    if (idx == dlen && data instanceof String) {
+      writer.write('"');
+      writer.write((String)data);
+      writer.write('"');
+      return;
+    }
+    final CharBuffer cb = charBuffer();
+    cb.append('"');
     cb.append(data.subSequence(0, idx));
 
     writeStringFallback(cb,data.subSequence(idx, dlen));
 
     cb.append('"');
 
-    writeBuffer(w,cb);
+    writeBuffer(writer,cb);
   }
 
   public void writeNumber(Number n) throws Exception {
+    if (n instanceof Long || n instanceof Integer || n instanceof Short || n instanceof Byte) {
+      bw.writeLong(n.longValue());
+      return;
+    }
     if (n instanceof Ratio)
       n = ((Ratio)n).doubleValue();
 

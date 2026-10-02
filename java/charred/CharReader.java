@@ -46,12 +46,17 @@ public final class CharReader implements AutoCloseable
   public final int remaining() {
     return bufferLength() - curPos;
   }
+  //Same result as Character.isWhitespace but printable ascii - the overwhelmingly
+  //common case - never reaches the unicode tables.
+  public static boolean isWhitespace(char c) {
+    return (c <= ' ' || c >= 0x80) && Character.isWhitespace(c);
+  }
   public final char eatwhite() {
     char[] buffer = curBuffer;
     while(buffer != null) {
       final int len = buffer.length;
       int pos = curPos;
-      for(; pos < len && Character.isWhitespace(buffer[pos]); ++pos);
+      for(; pos < len && isWhitespace(buffer[pos]); ++pos);
       if (pos < len) {
 	final char retval = buffer[pos];
 	position(pos+1);
