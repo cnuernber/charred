@@ -3,6 +3,8 @@
  * JSON number parsing is done in place in the read buffer with Clinger's fast path and the Eisel-Lemire algorithm - double parsing is ~4x faster, integers ~1.4x.  Results are bit-identical to Double/parseDouble; anything the fast path can't handle exactly falls back to the JDK.
  * JSON reading avoids allocations for true/false/null and redundant whitespace scans for array elements.
  * JSON writing goes through an unsynchronized buffer and writes integers directly - 1.5-2x faster for number heavy data.
+ * CSV fields contained in a single read buffer are converted to strings in place rather than copied - ~10-20% faster CSV parsing.
+ * Fix NullPointerException when a CSV escape character is the last character of the input.
 
 ## 1.042
  * Fix for issue-28 - allow non strings as keys when writing json.  These get converted to strings.

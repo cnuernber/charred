@@ -52,7 +52,10 @@ public final class CSVReader {
 	  }
 	} else if (curChar == localEscape) {
 	  sb.append(buffer,startpos,pos);
-	  sb.append((char)reader.readFrom(pos+1));
+	  final int escaped = reader.readFrom(pos+1);
+	  if (escaped == -1)
+	    throw new EOFException("CSV parse error - EOF encountered within quote - " + sb.toString());
+	  sb.append((char)escaped);
 	  buffer = reader.buffer();
 	  len = bufferLength(buffer);
 	  startpos = reader.position();
@@ -90,52 +93,85 @@ public final class CSVReader {
     }
     //EOF encountered inside quote
   }
+  //When a field lies entirely within one buffer and nothing was accumulated in the
+  //string builder we record its range here instead of copying it.
+  char[] fieldBuf;
+  int fieldStart;
+  int fieldEnd;
+  final void endField(CharBuffer sb, char[] buffer, int startpos, int pos) {
+    if (sb.length() == 0) {
+      fieldBuf = buffer;
+      fieldStart = startpos;
+      fieldEnd = pos;
+    } else {
+      sb.append(buffer, startpos, pos);
+    }
+  }
+  //Value of the field most recently ended by csvRead.
+  final Object fieldValue(CharBuffer sb) {
+    final char[] fb = fieldBuf;
+    if (fb != null) {
+      fieldBuf = null;
+      return sb.toString(fb, fieldStart, fieldEnd);
+    }
+    return sb.toString();
+  }
   //Read a row from a CSV file.
   final int csvRead(CharBuffer sb, final boolean enableComment, final boolean enableQuote) throws EOFException {
+    fieldBuf = null;
     char[] buffer = reader.buffer();
     final char localSep = sep;
-    final char localQuot = quot;
-    final char localComment = comment;
     final char localEscape = escape;
     boolean ec = enableComment;
     boolean eq = enableQuote;
     while(buffer != null) {
       int startpos = reader.position();
       int len = buffer.length;
-      for(int pos = startpos; pos < len; ++pos) {
+      int pos = startpos;
+      //Comments and quotes are only recognized on the first character.
+      if ((ec || eq) && pos < len) {
 	final char curChar = buffer[pos];
-	if (curChar == localComment && ec) {
+	if (curChar == comment && ec) {
 	  reader.position(pos + 1);
 	  return COMMENT;
-	} else if (curChar == localQuot && eq) {
-	  sb.append(buffer, startpos, pos);
+	} else if (curChar == quot && eq) {
 	  reader.position(pos + 1);
 	  return QUOT;
-	} else if (curChar == localSep) {
-	  sb.append(buffer, startpos, pos);
+	}
+	ec = false;
+	eq = false;
+      }
+      for(; pos < len; ++pos) {
+	final char curChar = buffer[pos];
+	if (curChar != localSep && curChar != '\n' && curChar != '\r' && curChar != localEscape)
+	  continue;
+	if (curChar == localSep) {
+	  endField(sb, buffer, startpos, pos);
 	  reader.position(pos + 1);
 	  return SEP;
 	} else if (curChar == localEscape) {
 	  sb.append(buffer, startpos, pos);
-	  sb.append((char)reader.readFrom(pos+1));
+	  final int escaped = reader.readFrom(pos+1);
+	  //A trailing escape at EOF has nothing to escape.
+	  if (escaped == -1)
+	    return EOF;
+	  sb.append((char)escaped);
 	  buffer = reader.buffer();
 	  len = bufferLength(buffer);
 	  startpos = reader.position();
 	  //Account for loop increment
 	  pos = startpos - 1;
 	} else if (curChar == '\n') {
-	  sb.append(buffer, startpos, pos);
+	  endField(sb, buffer, startpos, pos);
 	  reader.position(pos + 1);
 	  return EOL;
 	} else if (curChar == '\r') {
-	  sb.append(buffer, startpos, pos);
+	  endField(sb, buffer, startpos, pos);
 	  if (reader.readFrom(pos+1) != '\n') {
 	    reader.unread();
 	  }
 	  return EOL;
 	}
-	ec = false;
-	eq = false;
       }
       sb.append(buffer, startpos, len);
       buffer = reader.nextBuffer();
@@ -188,7 +224,7 @@ public final class CSVReader {
 	    comment = true;
 	  } else {
 	    if (p.test(colidx))
-	      curRow = arrayReader.onValue(curRow, sb.toString());
+	      curRow = arrayReader.onValue(curRow, rdr.fieldValue(sb));
 	    ++colidx;
 	    sb.clear();
 	    quote = true;

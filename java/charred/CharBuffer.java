@@ -89,15 +89,21 @@ public final class CharBuffer implements CharSequence
   }
   public final String toString() { return (String)toString(null); }
   public final Object toString(ICanonicalObjs cv) {
-    int strlen = len;
-    int startoff = 0;
+    return rangeToString(buffer, 0, len, cv);
+  }
+  //Apply this buffer's trim/nil-empty settings to an external range without copying it.
+  public final Object toString(char[] buf, int startoff, int endoff) {
+    return rangeToString(buf, startoff, endoff, null);
+  }
+  final Object rangeToString(char[] buffer, int startoff, int endoff, ICanonicalObjs cv) {
+    int strlen = endoff - startoff;
     if(trimLeading && strlen != 0) {
-      for (; startoff < len && Character.isWhitespace(buffer[startoff]); ++startoff);
-      strlen = strlen - startoff;
+      for (; startoff < endoff && CharReader.isWhitespace(buffer[startoff]); ++startoff);
+      strlen = endoff - startoff;
     }
     if(trimTrailing && strlen != 0) {
-      int idx = len - 1;
-      for (; idx >= startoff && Character.isWhitespace(buffer[idx]); --idx);
+      int idx = endoff - 1;
+      for (; idx >= startoff && CharReader.isWhitespace(buffer[idx]); --idx);
       strlen = idx + 1 - startoff;
     }
     if(strlen == 0) {

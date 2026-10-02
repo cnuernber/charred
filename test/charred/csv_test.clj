@@ -263,3 +263,20 @@ data" :comment-char \#))))
   (let [test-str ",,\n,,\n,,\n,,"]
     (is (= 0 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? true))))
     (is (= 4 (count (api/read-csv (java.io.StringReader. test-str) :drop-empty-rows? false))))))
+
+
+(deftest trailing-escape-at-eof
+  (is (= [["a" "b"]] (read-csv "a,b\\" :escape \\)))
+  (is (= [["a" "b"]] (read-csv "a,b\\" :escape \\ :bufsize 2 :async? false))))
+
+
+(deftest fields-across-buffers
+  (let [data "abc, def ,\"q,u\"\"o\"\nlong-field-value,x,\r\n,,\n"
+        expected (read-csv data)]
+    (is (= [["abc" "def" "q,u\"o"] ["long-field-value" "x" ""] ["" "" ""]] expected))
+    (doseq [bufsize [1 2 3 5 8 13]]
+      (is (= expected (read-csv data :bufsize bufsize :async? false))))))
+
+
+(deftest escape-at-eof-inside-quote
+  (is (thrown? java.io.EOFException (read-csv "a,\"b\\" :escape \\))))
